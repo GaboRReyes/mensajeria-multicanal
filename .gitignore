@@ -1,0 +1,20 @@
+# Backend Laravel
+backend/vendor/
+backend/.env
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/bootstrap/cache/*
+ 
+# Frontend Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/out/
+ 
+# Sistema
+.DS_Store
+*.log
+.idea/
+.vscode/
