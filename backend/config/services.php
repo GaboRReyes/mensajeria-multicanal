@@ -2,17 +2,14 @@
 
 return [
 
-    /*
-    |--------------------------------------------------------------------------
-    | Third Party Services
-    |--------------------------------------------------------------------------
-    |
-    | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
-    |
-    */
+  'whatsapp' => [
+    'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+    'business_account_id' => env('WHATSAPP_BUSINESS_ACCOUNT_ID'),
+    'access_token' => env('WHATSAPP_ACCESS_TOKEN'),
+    'api_version' => env('WHATSAPP_API_VERSION', 'v25.0'),
+    'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
+    'app_secret' => env('WHATSAPP_APP_SECRET'),
+],
 
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),

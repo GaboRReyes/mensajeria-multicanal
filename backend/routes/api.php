@@ -18,3 +18,17 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::get('/reports/kpis', [ReportController::class, 'kpis']);
     Route::get('/reports/export/{format}', [ReportController::class, 'export']);
 });
+Route::get('/v1/whatsapp/webhook', function (Request $r) {
+    if ($r->query('hub_verify_token') === config('services.whatsapp.verify_token')) {
+        return response($r->query('hub_challenge'), 200);
+    }
+    return response('', 403);
+});
+ 
+Route::post('/v1/whatsapp/webhook', [WhatsAppWebhookController::class, 'handle']);
+use App\Http\Controllers\Api\V1\Webhooks\WhatsAppWebhookController;
+
+Route::prefix('v1/webhooks')->group(function () {
+    Route::get('whatsapp', [WhatsAppWebhookController::class, 'verify']);
+    Route::post('whatsapp', [WhatsAppWebhookController::class, 'handle']);
+});
