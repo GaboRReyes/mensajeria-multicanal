@@ -12,20 +12,28 @@ class Message extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id',
-        'user_id',
-        'template_id',
-        'provider_id',
-        'topic',           // ← agregar
-        'extension',       // ← agregar
-        'channel',
-        'recipient_hash',
-        'recipient_masked', // ← agregar
-        'status',
-        'attempts',        // ← agregar
-        'inserted_at',     // ← agregar
-        'sent_at',
-        'delivered_at',
-        'read_at',
-    ];
+    'id',
+    'user_id',
+    'template_id',
+    'provider_id',
+    'topic',
+    'extension',
+    'payload',
+    'channel',
+    'event',
+    'recipient_hash',
+    'private',
+    'recipient_masked',
+    'variables',
+    'idempotency_key',
+    'status',
+    'provider_message_id',
+    'attempts',
+    'last_error',
+    'scheduled_at',
+    'inserted_at',
+    'sent_at',
+    'delivered_at',
+    'read_at',
+];
 }

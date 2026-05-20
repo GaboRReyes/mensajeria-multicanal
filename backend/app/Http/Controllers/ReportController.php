@@ -14,8 +14,8 @@ class ReportController extends Controller
 {
     public function kpis(Request $request)
     {
-        $from = $request->date('from', now()->subDays(30));
-        $to   = $request->date('to', now());
+        $from = $request->input('from', now()->subDays(30)->toDateString());
+        $to   = $request->input('to', now()->toDateString());
 
         return response()->json([
 
