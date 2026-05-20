@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Models\Message;
 
@@ -23,14 +24,16 @@ Route::get('/pixel/{uuid}', function (string $uuid) {
 
 })->name('messages.pixel');
 
-use Illuminate\Support\Facades\Mail;
 
 Route::get('/test-mail', function () {
 
-    Mail::raw('Correo de prueba desde Resend', function ($message) {
-        $message->to('22030785@itcelaya.edu.mx')
-                ->subject('Prueba Resend');
+    Mail::raw('Correo de prueba desde Brevo', function ($message) {
+
+        $message->to('reyesjosafat816@gmail.com')
+                ->subject('Prueba Laravel + Brevo');
+
     });
 
     return 'Correo enviado';
+
 });
