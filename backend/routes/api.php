@@ -18,3 +18,14 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::get('/reports/kpis', [ReportController::class, 'kpis']);
     Route::get('/reports/export/{format}', [ReportController::class, 'export']);
 });
+
+Route::prefix('v1')->group(function () {
+
+    Route::get('/reports/kpis', [ReportController::class, 'kpis']);
+
+    Route::get('/reports/export/{format}', [
+        ReportController::class,
+        'export'
+    ]);
+
+});
