@@ -1,8 +1,34 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+use App\Models\Message;
+
+use App\Jobs\SendEmailJob;
+use App\Jobs\SendWhatsAppJob;
+
+Schedule::call(function () {
+
+    Message::where('status', 'programado')
+        ->where('scheduled_at', '<=', now())
+        ->chunkById(100, function ($messages) {
+
+            foreach ($messages as $message) {
+
+                if ($message->channel === 'email') {
+
+                    SendEmailJob::dispatch($message->id);
+
+                } else {
+
+                    SendWhatsAppJob::dispatch($message->id);
+
+                }
+
+                $message->update([
+                    'status' => 'en_cola'
+                ]);
+            }
+        });
+
+})->everyMinute();
