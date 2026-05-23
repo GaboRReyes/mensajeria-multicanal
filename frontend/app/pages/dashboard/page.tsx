@@ -11,7 +11,13 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { exportReport, getReportsKpis, sendMessage } from "../../services/api";
+import {
+  exportReport,
+  getReportsKpis,
+  sendMessage,
+  getTemplates,
+} from "../../services/api";
+import type { Template } from "../../services/api";
 import styles from "./dashboard.module.css";
 
 type Section = "home" | "messages" | "templates" | "reports";
@@ -47,7 +53,6 @@ export default function Dashboard() {
   const menuItems = [
     { id: "home" as Section, label: "Inicio", icon: LayoutDashboard },
     { id: "messages" as Section, label: "Mensajes", icon: Mail },
-    { id: "templates" as Section, label: "Plantillas", icon: FileText },
     { id: "reports" as Section, label: "Reportes", icon: BarChart3 },
   ];
 
@@ -182,6 +187,37 @@ function MessagesSection() {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
+  // — Plantillas —
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
+
+  const toggleTemplates = async () => {
+    if (!templatesOpen && templates.length === 0) {
+      try {
+        const data = await getTemplates();
+        setTemplates(data);
+      } catch (err) {
+        setTemplatesError(
+          err instanceof Error ? err.message : "Error al cargar plantillas."
+        );
+      }
+    }
+    setTemplatesOpen((prev) => !prev);
+  };
+
+  const applyTemplate = (t: Template) => {
+    setContent(t.content);
+    if (
+      t.channel === "whatsapp" ||
+      t.channel === "email" ||
+      t.channel === "both"
+    ) {
+      setChannel(t.channel as "whatsapp" | "email" | "both");
+    }
+    setTemplatesOpen(false);
+  };
+
   const handleSend = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus(null);
@@ -190,11 +226,21 @@ function MessagesSection() {
 
     try {
       const response = await sendMessage({ recipient, content, channel });
-      setStatus(`Mensaje enviado por ${response.channel === "both" ? "WhatsApp y Email" : response.channel === "whatsapp" ? "WhatsApp" : "Email"}`);
+      setStatus(
+        `Mensaje enviado por ${
+          response.channel === "both"
+            ? "WhatsApp y Email"
+            : response.channel === "whatsapp"
+            ? "WhatsApp"
+            : "Email"
+        }`
+      );
       setRecipient("");
       setContent("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al enviar el mensaje.");
+      setError(
+        err instanceof Error ? err.message : "Error al enviar el mensaje."
+      );
     } finally {
       setSending(false);
     }
@@ -210,59 +256,104 @@ function MessagesSection() {
 
       <div className={styles.formSection}>
         <div className={styles.formCard}>
-          <h3>Enviar nuevo mensaje</h3>
+          <div className={styles.formCardHeader}>
+            <h3>Enviar nuevo mensaje</h3>
+
+            {/* ── Desplegable de plantillas ── */}
+            <div className={styles.templateDropdownWrapper}>
+              <button
+                type="button"
+                className={styles.templateToggle}
+                onClick={toggleTemplates}
+              >
+                <FileText size={15} />
+                Usar plantilla
+                <span
+                  className={`${styles.chevron} ${
+                    templatesOpen ? styles.chevronUp : ""
+                  }`}
+                >
+                  ▾
+                </span>
+              </button>
+
+              {templatesOpen && (
+                <div className={styles.templateDropdown}>
+                  {templatesError && (
+                    <p
+                      className={styles.errorText}
+                      style={{ padding: "0.6rem 0.9rem", margin: 0 }}
+                    >
+                      {templatesError}
+                    </p>
+                  )}
+                  {!templatesError && templates.length === 0 && (
+                    <p
+                      className={styles.infoText}
+                      style={{ padding: "0.6rem 0.9rem", margin: 0 }}
+                    >
+                      No hay plantillas disponibles.
+                    </p>
+                  )}
+                  {templates.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={styles.templateOption}
+                      onClick={() => applyTemplate(t)}
+                    >
+                      <span className={styles.templateOptionName}>{t.name}</span>
+                      <span className={styles.templateOptionMeta}>
+                        {t.channel}
+                        {t.subject ? ` · ${t.subject}` : ""}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           <form onSubmit={handleSend} className={styles.inputGroup}>
             <input
               type="text"
               value={recipient}
-              onChange={(event) => setRecipient(event.target.value)}
+              onChange={(e) => setRecipient(e.target.value)}
               placeholder="Destinatario"
               className={styles.input}
               required
             />
             <textarea
               value={content}
-              onChange={(event) => setContent(event.target.value)}
-              placeholder="Contenido del mensaje"
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Contenido del mensaje — o selecciona una plantilla arriba"
               className={styles.textarea}
               rows={4}
               required
             />
 
             <div className={styles.fieldGroup}>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  value="whatsapp"
-                  checked={channel === "whatsapp"}
-                  onChange={() => setChannel("whatsapp")}
-                />
-                WhatsApp
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  value="email"
-                  checked={channel === "email"}
-                  onChange={() => setChannel("email")}
-                />
-                Email
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  value="both"
-                  checked={channel === "both"}
-                  onChange={() => setChannel("both")}
-                />
-                Ambos
-              </label>
+              {(["whatsapp", "email", "both"] as const).map((ch) => (
+                <label key={ch} className={styles.radioLabel}>
+                  <input
+                    type="radio"
+                    value={ch}
+                    checked={channel === ch}
+                    onChange={() => setChannel(ch)}
+                  />
+                  {ch === "whatsapp" ? "WhatsApp" : ch === "email" ? "Email" : "Ambos"}
+                </label>
+              ))}
             </div>
 
             {status && <p className={styles.successText}>{status}</p>}
             {error && <p className={styles.errorText}>{error}</p>}
 
-            <button type="submit" className={styles.primaryButton} disabled={sending}>
+            <button
+              type="submit"
+              className={styles.primaryButton}
+              disabled={sending}
+            >
               {sending ? "Enviando..." : "Enviar"}
             </button>
           </form>
@@ -273,22 +364,15 @@ function MessagesSection() {
 }
 
 function TemplatesSection() {
-  const [templates, setTemplates] = useState<any[] | null>(null);
+  const [templates, setTemplates] = useState<Template[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    fetch('http://127.0.0.1:8000/api/v1/templates', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error('Error fetching templates');
-        return r.json();
-      })
+    getTemplates()
       .then((data) => setTemplates(data))
-      .catch((err) => setError(err.message));
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : "Error al cargar plantillas.")
+      );
   }, []);
 
   return (
@@ -300,21 +384,26 @@ function TemplatesSection() {
       </p>
 
       <div className={styles.formSection}>
-        <button className={styles.primaryButton}>
+        <button className={styles.primaryButton} style={{ width: "auto", padding: "0.8rem 1.5rem" }}>
           + Nueva plantilla
         </button>
 
         <div className={styles.formCard}>
           <h3>Plantillas guardadas</h3>
           {error && <p className={styles.errorText}>{error}</p>}
-          {templates === null && <p>Cargando plantillas...</p>}
-          {templates && templates.length === 0 && <p>No hay plantillas guardadas aún.</p>}
+          {templates === null && !error && <p>Cargando plantillas...</p>}
+          {templates && templates.length === 0 && (
+            <p>No hay plantillas guardadas aún.</p>
+          )}
           {templates && templates.length > 0 && (
             <ul className={styles.templateList}>
               {templates.map((t) => (
                 <li key={t.id} className={styles.templateItem}>
                   <strong>{t.name}</strong>
-                  <div className={styles.templateMeta}>{t.channel} · {t.subject}</div>
+                  <div className={styles.templateMeta}>
+                    {t.channel}
+                    {t.subject ? ` · ${t.subject}` : ""}
+                  </div>
                   <p className={styles.templateContent}>{t.content}</p>
                 </li>
               ))}
@@ -335,7 +424,9 @@ function ReportsSection() {
   useEffect(() => {
     getReportsKpis()
       .then((data) => setKpis(data))
-      .catch((err) => setError(err instanceof Error ? err.message : "Error al cargar KPIs."))
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : "Error al cargar KPIs.")
+      )
       .finally(() => setLoading(false));
   }, []);
 

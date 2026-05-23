@@ -78,3 +78,26 @@ export async function exportReport(format: "pdf" | "excel") {
   link.remove();
   URL.revokeObjectURL(url);
 }
+
+/* ─── Templates ─────────────────────────────────────────────── */
+
+export interface Template {
+  id: number;
+  name: string;
+  channel: string;
+  subject?: string;
+  content: string;
+}
+
+export async function getTemplates(): Promise<Template[]> {
+  const response = await fetch(`${API_BASE}/templates`, {
+    headers: authHeaders(),
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.message || "Error al cargar las plantillas.");
+  }
+
+  return result;
+}
