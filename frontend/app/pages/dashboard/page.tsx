@@ -11,23 +11,50 @@ import {
   Menu,
   X,
 } from "lucide-react";
+
 import {
   exportReport,
   getReportsKpis,
   sendMessage,
   getTemplates,
 } from "../../services/api";
+
 import type { Template } from "../../services/api";
+
 import styles from "./dashboard.module.css";
 
 type Section = "home" | "messages" | "templates" | "reports";
 
+type Kpis = {
+  total_messages: number;
+  active_templates: number;
+  connected_channels: number;
+  success_rate: string;
+  failed_messages: number;
+};
+
 export default function Dashboard() {
   const router = useRouter();
+
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<Section>("home");
+
+  const [activeSection, setActiveSection] =
+    useState<Section>("home");
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const [kpis, setKpis] = useState<Kpis | null>(null);
+
+  /* ───────────────────────── KPIs ───────────────────────── */
+
+  useEffect(() => {
+    getReportsKpis()
+      .then((data) => setKpis(data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  /* ───────────────────────── Auth ───────────────────────── */
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -41,19 +68,33 @@ export default function Dashboard() {
     if (userData) {
       setUser(JSON.parse(userData));
     }
+
     setLoading(false);
   }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
     router.push("/pages/login");
   };
 
   const menuItems = [
-    { id: "home" as Section, label: "Inicio", icon: LayoutDashboard },
-    { id: "messages" as Section, label: "Mensajes", icon: Mail },
-    { id: "reports" as Section, label: "Reportes", icon: BarChart3 },
+    {
+      id: "home" as Section,
+      label: "Inicio",
+      icon: LayoutDashboard,
+    },
+    {
+      id: "messages" as Section,
+      label: "Mensajes",
+      icon: Mail,
+    },
+    {
+      id: "reports" as Section,
+      label: "Reportes",
+      icon: BarChart3,
+    },
   ];
 
   if (loading) {
@@ -66,17 +107,25 @@ export default function Dashboard() {
 
   return (
     <div className={styles.layout}>
-
       {/* Overlay móvil */}
       <div
-        className={`${styles.overlay} ${sidebarOpen ? styles.visible : ""}`}
+        className={`${styles.overlay} ${
+          sidebarOpen ? styles.visible : ""
+        }`}
         onClick={() => setSidebarOpen(false)}
       />
 
       {/* Sidebar */}
-      <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : ""}`}>
+      <aside
+        className={`${styles.sidebar} ${
+          sidebarOpen ? styles.open : ""
+        }`}
+      >
         <div className={styles.sidebarHeader}>
-          <span className={styles.sidebarTitle}>Panel</span>
+          <span className={styles.sidebarTitle}>
+            Panel
+          </span>
+
           <button
             onClick={() => setSidebarOpen(false)}
             className={styles.menuButton}
@@ -96,7 +145,9 @@ export default function Dashboard() {
                   setSidebarOpen(false);
                 }}
                 className={`${styles.sidebarItem} ${
-                  activeSection === item.id ? styles.active : ""
+                  activeSection === item.id
+                    ? styles.active
+                    : ""
                 }`}
               >
                 <item.icon size={17} />
@@ -107,16 +158,18 @@ export default function Dashboard() {
         </nav>
 
         <div className={styles.sidebarFooter}>
-          <button onClick={handleLogout} className={styles.logoutButton}>
+          <button
+            onClick={handleLogout}
+            className={styles.logoutButton}
+          >
             <LogOut size={17} />
             <span>Cerrar sesión</span>
           </button>
         </div>
       </aside>
 
-      {/* Contenido principal */}
+      {/* Main */}
       <div className={styles.main}>
-
         {/* Header */}
         <header className={styles.header}>
           <button
@@ -132,47 +185,88 @@ export default function Dashboard() {
           </span>
         </header>
 
-        {/* Secciones */}
+        {/* Content */}
         <main className={styles.content}>
-          {activeSection === "home"      && <HomeSection user={user} />}
-          {activeSection === "messages"  && <MessagesSection />}
-          {activeSection === "templates" && <TemplatesSection />}
-          {activeSection === "reports"   && <ReportsSection />}
-        </main>
+          {activeSection === "home" && (
+            <HomeSection
+              user={user}
+              kpis={kpis}
+            />
+          )}
 
+          {activeSection === "messages" && (
+            <MessagesSection />
+          )}
+
+          {activeSection === "templates" && (
+            <TemplatesSection />
+          )}
+
+          {activeSection === "reports" && (
+            <ReportsSection />
+          )}
+        </main>
       </div>
     </div>
   );
 }
 
-/* ─── Secciones ─────────────────────────────────────────────── */
+/* ───────────────────────── HOME ───────────────────────── */
 
-function HomeSection({ user }: { user: any }) {
+function HomeSection({
+  user,
+  kpis,
+}: {
+  user: any;
+  kpis: Kpis | null;
+}) {
   return (
     <>
       <div className={styles.card}>
-        <p className={styles.sectionLabel}>Bienvenido</p>
+        <p className={styles.sectionLabel}>
+          Bienvenido
+        </p>
+
         <h2 className={styles.cardTitle}>
           Hola, {user?.name || "Usuario"}
         </h2>
+
         <p className={styles.cardDescription}>
-          Desde este panel puedes gestionar mensajes, plantillas,
-          ver reportes y configurar los ajustes de tu plataforma.
+          Desde este panel puedes gestionar
+          mensajes, plantillas, ver reportes y
+          configurar los ajustes de tu plataforma.
         </p>
       </div>
 
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
-          <p className={styles.statLabel}>Mensajes enviados</p>
-          <p className={styles.statValue}>1,248</p>
+          <p className={styles.statLabel}>
+            Mensajes enviados
+          </p>
+
+          <p className={styles.statValue}>
+            {kpis?.total_messages ?? 0}
+          </p>
         </div>
+
         <div className={styles.statCard}>
-          <p className={styles.statLabel}>Plantillas activas</p>
-          <p className={styles.statValue}>8</p>
+          <p className={styles.statLabel}>
+            Plantillas activas
+          </p>
+
+          <p className={styles.statValue}>
+            {kpis?.active_templates ?? 0}
+          </p>
         </div>
+
         <div className={styles.statCard}>
-          <p className={styles.statLabel}>Canales conectados</p>
-          <p className={styles.statValue}>5</p>
+          <p className={styles.statLabel}>
+            Canales conectados
+          </p>
+
+          <p className={styles.statValue}>
+            {kpis?.connected_channels ?? 0}
+          </p>
         </div>
       </div>
     </>
@@ -227,10 +321,9 @@ function MessagesSection() {
     try {
       const response = await sendMessage({ recipient, content, channel });
       setStatus(
-        `Mensaje enviado por ${
-          response.channel === "both"
-            ? "WhatsApp y Email"
-            : response.channel === "whatsapp"
+        `Mensaje enviado por ${response.channel === "both"
+          ? "WhatsApp y Email"
+          : response.channel === "whatsapp"
             ? "WhatsApp"
             : "Email"
         }`
@@ -269,9 +362,8 @@ function MessagesSection() {
                 <FileText size={15} />
                 Usar plantilla
                 <span
-                  className={`${styles.chevron} ${
-                    templatesOpen ? styles.chevronUp : ""
-                  }`}
+                  className={`${styles.chevron} ${templatesOpen ? styles.chevronUp : ""
+                    }`}
                 >
                   ▾
                 </span>
@@ -426,7 +518,7 @@ function ReportsSection() {
       .then((data) => setKpis(data))
       .catch((err) =>
         setError(err instanceof Error ? err.message : "Error al cargar KPIs.")
-      )
+      ) 
       .finally(() => setLoading(false));
   }, []);
 

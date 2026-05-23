@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class MessageSeeder extends Seeder
@@ -12,7 +13,12 @@ class MessageSeeder extends Seeder
     public function run(): void
     {
         $user = User::first();
-        $providerId = \DB::table('providers')->first()->id;
+        $provider = DB::table('providers')->first();
+
+        if (!$user || !$provider) {
+            $this->command->warn('No hay usuarios o providers disponibles.');
+            return;
+        }
 
         $messages = [
             [
@@ -33,9 +39,10 @@ class MessageSeeder extends Seeder
         ];
 
         foreach ($messages as $msg) {
-            $user->messages()->create([
+
+            $data = [
                 'id'               => Str::uuid(),
-                'provider_id'      => $providerId,
+                'provider_id'      => $provider->id,
                 'topic'            => $msg['topic'],
                 'extension'        => 'html',
                 'channel'          => $msg['channel'],
@@ -45,9 +52,17 @@ class MessageSeeder extends Seeder
                 'attempts'         => 1,
                 'inserted_at'      => now(),
                 'sent_at'          => now(),
-                'sent_at'      => now(),
-                'delivered_at' => now(),
-            ]);
+            ];
+
+            if ($msg['status'] === 'entregado' || $msg['status'] === 'leido') {
+                $data['delivered_at'] = now();
+            }
+
+            if ($msg['status'] === 'leido') {
+                $data['read_at'] = now();
+            }
+
+            $user->messages()->create($data);
         }
     }
 }
