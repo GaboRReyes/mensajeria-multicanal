@@ -7,7 +7,7 @@ use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\ReportController;
 
 Route::post('/v1/auth/token', [AuthController::class, 'token']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/v1/login', [AuthController::class, 'login']);
 
 
 Route::middleware('auth:sanctum')->prefix('v1')->group(function () {

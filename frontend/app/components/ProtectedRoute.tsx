@@ -12,7 +12,7 @@ export default function ProtectedRoute({
 
     if (!token) {
 
-        return <Navigate to="/login" />;
+        return <Navigate to="api/v1/login" />;
     }
 
     return children;

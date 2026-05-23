@@ -12,9 +12,9 @@ export default function App() {
         const token = localStorage.getItem("token");
         
         if (!token) {
-            router.push("/login");
+            router.push("/pages/login");
         } else {
-            router.push("/dashboard");
+            router.push("/pages/dashboard");
         }
     }, [router]);
 
