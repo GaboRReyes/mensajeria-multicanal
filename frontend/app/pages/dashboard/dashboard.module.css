@@ -1,0 +1,384 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* SIDEBAR */
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-right: 1px solid var(--border);
+  transition: transform 0.25s ease;
+}
+
+.sidebarHeader {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebarTitle {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.sidebarNav {
+  flex: 1;
+  padding: 0.75rem;
+  overflow-y: auto;
+}
+
+.sidebarMenu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebarItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 400;
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebarItem:hover {
+  background: #f4f4f5;
+  color: var(--text);
+}
+
+.sidebarItem.active {
+  background: #18181b;
+  color: white;
+}
+
+.sidebarFooter {
+  padding: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.logoutButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 400;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.logoutButton:hover {
+  background: #f4f4f5;
+  color: var(--text);
+}
+
+/* OVERLAY (móvil) */
+
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+}
+
+.overlay.visible {
+  display: block;
+}
+
+/* MAIN */
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* HEADER */
+
+.header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.75rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.menuButton {
+  display: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.25rem;
+}
+
+.userPill {
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: white;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+/* CONTENT */
+
+.content {
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* CARDS */
+
+.card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.sectionLabel {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text);
+  margin: 0.5rem 0 0;
+}
+
+.cardDescription {
+  margin-top: 0.6rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+/* STATS */
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.statCard {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+.statLabel {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.statValue {
+  margin-top: 0.75rem;
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* FORMS (secciones internas) */
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.formCard {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.formCard h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.formCard p {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.inputGroup {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  background: #fafafa;
+  color: var(--text);
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: #52525b;
+  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.05);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #a1a1aa;
+}
+
+.primaryButton {
+  border: none;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  background: #18181b;
+  color: white;
+  font-size: 0.92rem;
+  font-weight: 500;
+  width: 100%;
+  transition: background 0.15s ease;
+}
+
+.primaryButton:hover {
+  background: var(--primary-hover);
+}
+
+/* LISTAS (resumen rápido, accesos) */
+
+.listItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #f4f4f5;
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.listItem:last-child {
+  margin-bottom: 0;
+}
+
+.listItemValue {
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* REPORTS */
+
+.reportsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.reportStat {
+  background: #f4f4f5;
+  border-radius: 10px;
+  padding: 1.25rem;
+}
+
+.reportStat p:first-child {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.reportStat p:last-child {
+  margin: 0.5rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .menuButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .reportsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .content {
+    padding: 1rem;
+  }
+
+  .header {
+    padding: 0 1rem;
+  }
+}
