@@ -1,11 +1,8 @@
 <?php
 namespace App\Models;
 
-<<<<<<< HEAD
-use Illuminate\Database\Eloquent\Factories\HasFactory; // ← agregar
-=======
-use Illuminate\Database\Eloquent\Factories\HasFactory; // add this
->>>>>>> dev-frontend
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
