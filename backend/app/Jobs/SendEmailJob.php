@@ -41,44 +41,57 @@ class SendEmailJob implements ShouldQueue
     $message = Message::find($this->messageId);
 
     if (!$message) {
+
         Log::error('Mensaje no encontrado');
         return;
     }
 
     try {
 
-        Mail::raw('Hola desde Laravel', function ($mail) {
+        $payload = $message->payload ?? [];
 
-            $mail->to('reyesjosafat816@gmail.com')
-                ->subject('Prueba');
-        });
+        $content = is_array($payload)
+            ? ($payload['content'] ?? '')
+            : json_decode($payload, true)['content'] ?? '';
+
+
+        Mail::raw(
+            $content,
+            function ($mail) use ($message) {
+
+                $mail->to($message->recipient)
+                    ->subject($message->topic);
+            }
+        );
 
         $message->update([
-            'status' => 'enviado'
+
+            'status' => 'enviado',
+
+            'sent_at' => now(),
+
+            'attempts' => $message->attempts + 1,
         ]);
 
         Log::info('EMAIL ENVIADO');
 
     } catch (\Throwable $e) {
 
-        Log::error('ERROR EN JOB: ' . $e->getMessage());
+        $message->update([
+
+            'status' => 'fallido',
+
+            'last_error' => [
+                'message' => $e->getMessage()
+            ],
+        ]);
+
+        Log::error(
+            'ERROR EN JOB: '
+            . $e->getMessage()
+        );
 
         throw $e;
     }
 }
-    public function failed(Throwable $e): void
-    {
-        $message = Message::find($this->messageId);
-
-        if ($message) {
-
-            $message->update([
-                'status' => 'fallido'
-            ]);
-        }
-
-        Log::error('JOB FALLÓ DEFINITIVAMENTE');
-
-        Log::error($e->getMessage());
-    }
 }

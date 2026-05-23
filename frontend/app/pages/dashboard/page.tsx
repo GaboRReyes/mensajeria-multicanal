@@ -276,129 +276,287 @@ function HomeSection({
 function MessagesSection() {
   const [recipient, setRecipient] = useState("");
   const [content, setContent] = useState("");
-  const [channel, setChannel] = useState<"whatsapp" | "email" | "both">("whatsapp");
-  const [status, setStatus] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
 
-  // — Plantillas —
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [templatesOpen, setTemplatesOpen] = useState(false);
-  const [templatesError, setTemplatesError] = useState<string | null>(null);
+  const [channel, setChannel] = useState<
+    "whatsapp" | "email" | "both"
+  >("whatsapp");
+
+  const [scheduledAt, setScheduledAt] =
+    useState("");
+
+  const [status, setStatus] = useState<
+    string | null
+  >(null);
+
+  const [error, setError] = useState<
+    string | null
+  >(null);
+
+  const [sending, setSending] =
+    useState(false);
+
+  /*
+  ─────────────────────────────────────────────
+  Templates
+  ─────────────────────────────────────────────
+  */
+
+  const [templates, setTemplates] = useState<
+    Template[]
+  >([]);
+
+  const [templatesOpen, setTemplatesOpen] =
+    useState(false);
+
+  const [templatesError, setTemplatesError] =
+    useState<string | null>(null);
 
   const toggleTemplates = async () => {
-    if (!templatesOpen && templates.length === 0) {
+    if (
+      !templatesOpen &&
+      templates.length === 0
+    ) {
       try {
         const data = await getTemplates();
+
         setTemplates(data);
+
       } catch (err) {
+
         setTemplatesError(
-          err instanceof Error ? err.message : "Error al cargar plantillas."
+          err instanceof Error
+            ? err.message
+            : "Error al cargar plantillas."
         );
       }
     }
+
     setTemplatesOpen((prev) => !prev);
   };
 
   const applyTemplate = (t: Template) => {
+
     setContent(t.content);
+
     if (
       t.channel === "whatsapp" ||
       t.channel === "email" ||
       t.channel === "both"
     ) {
-      setChannel(t.channel as "whatsapp" | "email" | "both");
+
+      setChannel(
+        t.channel as
+          | "whatsapp"
+          | "email"
+          | "both"
+      );
     }
+
     setTemplatesOpen(false);
   };
 
-  const handleSend = async (event: FormEvent<HTMLFormElement>) => {
+  /*
+  ─────────────────────────────────────────────
+  SEND MESSAGE
+  ─────────────────────────────────────────────
+  */
+
+  const handleSend = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
+
     event.preventDefault();
+
     setStatus(null);
+
     setError(null);
+
     setSending(true);
 
     try {
-      const response = await sendMessage({ recipient, content, channel });
+
+      const response = await sendMessage({
+
+        recipient,
+
+        content,
+
+        channel,
+
+        scheduled_at:
+          scheduledAt || null,
+      });
+
       setStatus(
-        `Mensaje enviado por ${response.channel === "both"
-          ? "WhatsApp y Email"
-          : response.channel === "whatsapp"
-            ? "WhatsApp"
-            : "Email"
-        }`
+
+        scheduledAt
+
+          ? "Mensaje programado correctamente"
+
+          : `Mensaje enviado por ${
+              response.channel === "both"
+                ? "WhatsApp y Email"
+                : response.channel ===
+                  "whatsapp"
+                ? "WhatsApp"
+                : "Email"
+            }`
       );
+
       setRecipient("");
+
       setContent("");
+
+      setScheduledAt("");
+
     } catch (err) {
+
       setError(
-        err instanceof Error ? err.message : "Error al enviar el mensaje."
+        err instanceof Error
+          ? err.message
+          : "Error al enviar el mensaje."
       );
+
     } finally {
+
       setSending(false);
     }
   };
 
   return (
     <div className={styles.card}>
-      <p className={styles.sectionLabel}>Mensajes</p>
-      <h2 className={styles.cardTitle}>Gestión de mensajes</h2>
+
+      <p className={styles.sectionLabel}>
+        Mensajes
+      </p>
+
+      <h2 className={styles.cardTitle}>
+        Gestión de mensajes
+      </h2>
+
       <p className={styles.cardDescription}>
-        Envía mensajes por WhatsApp, Email o ambos canales.
+        Envía mensajes por WhatsApp,
+        Email o ambos canales.
       </p>
 
       <div className={styles.formSection}>
-        <div className={styles.formCard}>
-          <div className={styles.formCardHeader}>
-            <h3>Enviar nuevo mensaje</h3>
 
-            {/* ── Desplegable de plantillas ── */}
-            <div className={styles.templateDropdownWrapper}>
+        <div className={styles.formCard}>
+
+          <div className={styles.formCardHeader}>
+
+            <h3>
+              Enviar nuevo mensaje
+            </h3>
+
+            {/* Templates */}
+
+            <div
+              className={
+                styles.templateDropdownWrapper
+              }
+            >
+
               <button
                 type="button"
-                className={styles.templateToggle}
+                className={
+                  styles.templateToggle
+                }
                 onClick={toggleTemplates}
               >
+
                 <FileText size={15} />
+
                 Usar plantilla
+
                 <span
-                  className={`${styles.chevron} ${templatesOpen ? styles.chevronUp : ""
-                    }`}
+                  className={`${styles.chevron} ${
+                    templatesOpen
+                      ? styles.chevronUp
+                      : ""
+                  }`}
                 >
                   ▾
                 </span>
+
               </button>
 
               {templatesOpen && (
-                <div className={styles.templateDropdown}>
+
+                <div
+                  className={
+                    styles.templateDropdown
+                  }
+                >
+
                   {templatesError && (
+
                     <p
-                      className={styles.errorText}
-                      style={{ padding: "0.6rem 0.9rem", margin: 0 }}
+                      className={
+                        styles.errorText
+                      }
+                      style={{
+                        padding:
+                          "0.6rem 0.9rem",
+                        margin: 0,
+                      }}
                     >
                       {templatesError}
                     </p>
                   )}
-                  {!templatesError && templates.length === 0 && (
+
+                  {!templatesError &&
+                    templates.length ===
+                      0 && (
+
                     <p
-                      className={styles.infoText}
-                      style={{ padding: "0.6rem 0.9rem", margin: 0 }}
+                      className={
+                        styles.infoText
+                      }
+                      style={{
+                        padding:
+                          "0.6rem 0.9rem",
+                        margin: 0,
+                      }}
                     >
-                      No hay plantillas disponibles.
+                      No hay plantillas
+                      disponibles.
                     </p>
                   )}
+
                   {templates.map((t) => (
+
                     <button
                       key={t.id}
                       type="button"
-                      className={styles.templateOption}
-                      onClick={() => applyTemplate(t)}
+                      className={
+                        styles.templateOption
+                      }
+                      onClick={() =>
+                        applyTemplate(t)
+                      }
                     >
-                      <span className={styles.templateOptionName}>{t.name}</span>
-                      <span className={styles.templateOptionMeta}>
-                        {t.channel}
-                        {t.subject ? ` · ${t.subject}` : ""}
+
+                      <span
+                        className={
+                          styles.templateOptionName
+                        }
+                      >
+                        {t.name}
                       </span>
+
+                      <span
+                        className={
+                          styles.templateOptionMeta
+                        }
+                      >
+                        {t.channel}
+
+                        {t.subject
+                          ? ` · ${t.subject}`
+                          : ""}
+                      </span>
+
                     </button>
                   ))}
                 </div>
@@ -406,47 +564,154 @@ function MessagesSection() {
             </div>
           </div>
 
-          <form onSubmit={handleSend} className={styles.inputGroup}>
+          {/* FORM */}
+
+          <form
+            onSubmit={handleSend}
+            className={styles.inputGroup}
+          >
+
             <input
               type="text"
               value={recipient}
-              onChange={(e) => setRecipient(e.target.value)}
+              onChange={(e) =>
+                setRecipient(
+                  e.target.value
+                )
+              }
               placeholder="Destinatario"
               className={styles.input}
               required
             />
+
             <textarea
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={(e) =>
+                setContent(
+                  e.target.value
+                )
+              }
               placeholder="Contenido del mensaje — o selecciona una plantilla arriba"
               className={styles.textarea}
               rows={4}
               required
             />
 
-            <div className={styles.fieldGroup}>
-              {(["whatsapp", "email", "both"] as const).map((ch) => (
-                <label key={ch} className={styles.radioLabel}>
+            {/* CHANNELS */}
+
+            <div
+              className={styles.fieldGroup}
+            >
+
+              {(
+                [
+                  "whatsapp",
+                  "email",
+                  "both",
+                ] as const
+              ).map((ch) => (
+
+                <label
+                  key={ch}
+                  className={
+                    styles.radioLabel
+                  }
+                >
+
                   <input
                     type="radio"
                     value={ch}
-                    checked={channel === ch}
-                    onChange={() => setChannel(ch)}
+                    checked={
+                      channel === ch
+                    }
+                    onChange={() =>
+                      setChannel(ch)
+                    }
                   />
-                  {ch === "whatsapp" ? "WhatsApp" : ch === "email" ? "Email" : "Ambos"}
+
+                  {ch === "whatsapp"
+                    ? "WhatsApp"
+                    : ch === "email"
+                    ? "Email"
+                    : "Ambos"}
+
                 </label>
               ))}
             </div>
 
-            {status && <p className={styles.successText}>{status}</p>}
-            {error && <p className={styles.errorText}>{error}</p>}
+            {/* PROGRAMACIÓN */}
+
+            <div
+              className={
+                styles.scheduleGroup
+              }
+            >
+
+              <label
+                className={
+                  styles.scheduleLabel
+                }
+              >
+                Programar envío
+              </label>
+
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) =>
+                  setScheduledAt(
+                    e.target.value
+                  )
+                }
+                className={styles.input}
+                min={new Date(
+                Date.now() - new Date().getTimezoneOffset() * 60000
+)
+                  .toISOString()
+                  .slice(0, 16)}
+              />
+            </div>
+
+            {/* STATUS */}
+
+            {status && (
+
+              <p
+                className={
+                  styles.successText
+                }
+              >
+                {status}
+              </p>
+            )}
+
+            {error && (
+
+              <p
+                className={
+                  styles.errorText
+                }
+              >
+                {error}
+              </p>
+            )}
+
+            {/* BUTTON */}
 
             <button
               type="submit"
-              className={styles.primaryButton}
+              className={
+                styles.primaryButton
+              }
               disabled={sending}
             >
-              {sending ? "Enviando..." : "Enviar"}
+
+              {sending
+                ? "Procesando..."
+                : scheduledAt
+                ? "Programar mensaje"
+                : "Enviar"}
+
             </button>
           </form>
         </div>
