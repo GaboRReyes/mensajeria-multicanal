@@ -272,6 +272,48 @@
   box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.05);
 }
 
+.fieldGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 0.8rem;
+}
+
+.radioLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--text);
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.successText,
+.errorText,
+.infoText {
+  margin-top: 0.8rem;
+  font-size: 0.9rem;
+}
+
+.successText {
+  color: #166534;
+}
+
+.infoText {
+  color: #475569;
+}
+
+.loading {
+  display: grid;
+  place-items: center;
+  min-height: 50vh;
+  color: var(--muted);
+}
+
 .input::placeholder,
 .textarea::placeholder {
   color: #a1a1aa;
@@ -291,6 +333,40 @@
 
 .primaryButton:hover {
   background: var(--primary-hover);
+}
+
+.errorText {
+  color: #b91c1c;
+  margin-top: 0.5rem;
+}
+
+.templateList {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.templateItem {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.9rem;
+  background: #fafafa;
+}
+
+.templateMeta {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 0.35rem;
+}
+
+.templateContent {
+  margin-top: 0.6rem;
+  color: var(--text);
+  font-size: 0.92rem;
+  white-space: pre-wrap;
 }
 
 /* LISTAS (resumen rápido, accesos) */

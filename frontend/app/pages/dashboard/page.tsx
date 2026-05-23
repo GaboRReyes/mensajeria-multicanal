@@ -1,20 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Mail,
   FileText,
   BarChart3,
-  Settings,
   LogOut,
   Menu,
   X,
 } from "lucide-react";
+import { exportReport, getReportsKpis, sendMessage } from "../../services/api";
 import styles from "./dashboard.module.css";
 
-type Section = "home" | "messages" | "templates" | "reports" | "settings";
+type Section = "home" | "messages" | "templates" | "reports";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -49,7 +49,6 @@ export default function Dashboard() {
     { id: "messages" as Section, label: "Mensajes", icon: Mail },
     { id: "templates" as Section, label: "Plantillas", icon: FileText },
     { id: "reports" as Section, label: "Reportes", icon: BarChart3 },
-    { id: "settings" as Section, label: "Configuración", icon: Settings },
   ];
 
   if (loading) {
@@ -134,7 +133,6 @@ export default function Dashboard() {
           {activeSection === "messages"  && <MessagesSection />}
           {activeSection === "templates" && <TemplatesSection />}
           {activeSection === "reports"   && <ReportsSection />}
-          {activeSection === "settings"  && <SettingsSection />}
         </main>
 
       </div>
@@ -177,32 +175,97 @@ function HomeSection({ user }: { user: any }) {
 }
 
 function MessagesSection() {
+  const [recipient, setRecipient] = useState("");
+  const [content, setContent] = useState("");
+  const [channel, setChannel] = useState<"whatsapp" | "email" | "both">("whatsapp");
+  const [status, setStatus] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+
+  const handleSend = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStatus(null);
+    setError(null);
+    setSending(true);
+
+    try {
+      const response = await sendMessage({ recipient, content, channel });
+      setStatus(`Mensaje enviado por ${response.channel === "both" ? "WhatsApp y Email" : response.channel === "whatsapp" ? "WhatsApp" : "Email"}`);
+      setRecipient("");
+      setContent("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al enviar el mensaje.");
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <div className={styles.card}>
       <p className={styles.sectionLabel}>Mensajes</p>
       <h2 className={styles.cardTitle}>Gestión de mensajes</h2>
       <p className={styles.cardDescription}>
-        Envía, monitorea y cancela mensajes en tiempo real.
+        Envía mensajes por WhatsApp, Email o ambos canales.
       </p>
 
       <div className={styles.formSection}>
         <div className={styles.formCard}>
           <h3>Enviar nuevo mensaje</h3>
-          <div className={styles.inputGroup}>
+          <form onSubmit={handleSend} className={styles.inputGroup}>
             <input
               type="text"
+              value={recipient}
+              onChange={(event) => setRecipient(event.target.value)}
               placeholder="Destinatario"
               className={styles.input}
+              required
             />
             <textarea
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
               placeholder="Contenido del mensaje"
               className={styles.textarea}
               rows={4}
+              required
             />
-            <button className={styles.primaryButton}>
-              Enviar
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  value="whatsapp"
+                  checked={channel === "whatsapp"}
+                  onChange={() => setChannel("whatsapp")}
+                />
+                WhatsApp
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  value="email"
+                  checked={channel === "email"}
+                  onChange={() => setChannel("email")}
+                />
+                Email
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  value="both"
+                  checked={channel === "both"}
+                  onChange={() => setChannel("both")}
+                />
+                Ambos
+              </label>
+            </div>
+
+            {status && <p className={styles.successText}>{status}</p>}
+            {error && <p className={styles.errorText}>{error}</p>}
+
+            <button type="submit" className={styles.primaryButton} disabled={sending}>
+              {sending ? "Enviando..." : "Enviar"}
             </button>
-          </div>
+          </form>
         </div>
       </div>
     </div>
@@ -210,6 +273,24 @@ function MessagesSection() {
 }
 
 function TemplatesSection() {
+  const [templates, setTemplates] = useState<any[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    fetch('http://127.0.0.1:8000/api/v1/templates', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error('Error fetching templates');
+        return r.json();
+      })
+      .then((data) => setTemplates(data))
+      .catch((err) => setError(err.message));
+  }, []);
+
   return (
     <div className={styles.card}>
       <p className={styles.sectionLabel}>Plantillas</p>
@@ -225,7 +306,20 @@ function TemplatesSection() {
 
         <div className={styles.formCard}>
           <h3>Plantillas guardadas</h3>
-          <p>No hay plantillas guardadas aún.</p>
+          {error && <p className={styles.errorText}>{error}</p>}
+          {templates === null && <p>Cargando plantillas...</p>}
+          {templates && templates.length === 0 && <p>No hay plantillas guardadas aún.</p>}
+          {templates && templates.length > 0 && (
+            <ul className={styles.templateList}>
+              {templates.map((t) => (
+                <li key={t.id} className={styles.templateItem}>
+                  <strong>{t.name}</strong>
+                  <div className={styles.templateMeta}>{t.channel} · {t.subject}</div>
+                  <p className={styles.templateContent}>{t.content}</p>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>
@@ -233,83 +327,80 @@ function TemplatesSection() {
 }
 
 function ReportsSection() {
+  const [kpis, setKpis] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState<"pdf" | "excel" | null>(null);
+
+  useEffect(() => {
+    getReportsKpis()
+      .then((data) => setKpis(data))
+      .catch((err) => setError(err instanceof Error ? err.message : "Error al cargar KPIs."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleExport = async (format: "pdf" | "excel") => {
+    setExporting(format);
+    setError(null);
+
+    try {
+      await exportReport(format);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al exportar.");
+    } finally {
+      setExporting(null);
+    }
+  };
+
   return (
     <div className={styles.card}>
       <p className={styles.sectionLabel}>Reportes</p>
       <h2 className={styles.cardTitle}>Reportes y análisis</h2>
       <p className={styles.cardDescription}>
-        Visualiza KPIs y exporta datos en diferentes formatos.
+        Visualiza KPIs desde el backend y descarga reportes en PDF o Excel.
       </p>
 
-      <div className={styles.reportsGrid}>
-        <div className={styles.reportStat}>
-          <p>Total de mensajes</p>
-          <p>2,456</p>
+      {loading && <p>Cargando indicadores...</p>}
+      {error && <p className={styles.errorText}>{error}</p>}
+
+      {kpis && (
+        <div className={styles.reportsGrid}>
+          <div className={styles.reportStat}>
+            <p>Total de mensajes</p>
+            <p>{kpis.total_messages}</p>
+          </div>
+          <div className={styles.reportStat}>
+            <p>Tasa de entrega</p>
+            <p>{kpis.success_rate}</p>
+          </div>
+          <div className={styles.reportStat}>
+            <p>Mensajes fallidos</p>
+            <p>{kpis.failed_messages}</p>
+          </div>
+          <div className={styles.reportStat}>
+            <p>Plantillas activas</p>
+            <p>{kpis.active_templates}</p>
+          </div>
         </div>
-        <div className={styles.reportStat}>
-          <p>Tasa de entrega</p>
-          <p>98.5%</p>
-        </div>
-      </div>
+      )}
 
       <div style={{ marginTop: "1.25rem" }}>
-        <button className={styles.primaryButton} style={{ width: "auto", padding: "0.8rem 1.5rem" }}>
-          Exportar datos
+        <button
+          className={styles.primaryButton}
+          style={{ width: "auto", padding: "0.8rem 1.5rem", marginRight: "0.75rem" }}
+          onClick={() => handleExport("pdf")}
+          disabled={Boolean(exporting)}
+        >
+          {exporting === "pdf" ? "Descargando PDF..." : "Exportar PDF"}
         </button>
-      </div>
-    </div>
-  );
-}
-
-function SettingsSection() {
-  return (
-    <div className={styles.card}>
-      <p className={styles.sectionLabel}>Configuración</p>
-      <h2 className={styles.cardTitle}>Configuración</h2>
-      <p className={styles.cardDescription}>
-        Gestiona los canales y configuraciones de envío de mensajes.
-      </p>
-
-      <div className={styles.formSection}>
-
-        <div className={styles.formCard}>
-          <h3>Configuración de SMTP</h3>
-          <p>Para envíos de correo electrónico</p>
-          <div className={styles.inputGroup}>
-            <input type="text"     placeholder="Host SMTP"         className={styles.input} />
-            <input type="number"   placeholder="Puerto"            className={styles.input} />
-            <input type="email"    placeholder="Correo de origen"  className={styles.input} />
-            <input type="password" placeholder="Contraseña"        className={styles.input} />
-            <button className={styles.primaryButton}>
-              Guardar configuración SMTP
-            </button>
-          </div>
-        </div>
-
-        <div className={styles.formCard}>
-          <h3>Configuración de WhatsApp</h3>
-          <p>Integración con WhatsApp Business</p>
-          <div className={styles.inputGroup}>
-            <input type="text" placeholder="API Key de WhatsApp"  className={styles.input} />
-            <input type="text" placeholder="Número de teléfono"   className={styles.input} />
-            <button className={styles.primaryButton}>
-              Guardar configuración WhatsApp
-            </button>
-          </div>
-        </div>
-
-        <div className={styles.formCard}>
-          <h3>Configuración general</h3>
-          <p>Ajustes generales de la plataforma</p>
-          <div className={styles.inputGroup}>
-            <input type="text"  placeholder="Nombre de la empresa" className={styles.input} />
-            <input type="email" placeholder="Correo de soporte"    className={styles.input} />
-            <button className={styles.primaryButton}>
-              Guardar configuración general
-            </button>
-          </div>
-        </div>
-
+        <button
+          className={styles.primaryButton}
+          style={{ width: "auto", padding: "0.8rem 1.5rem" }}
+          onClick={() => handleExport("excel")}
+          disabled={Boolean(exporting)}
+        >
+          {exporting === "excel" ? "Descargando Excel..." : "Exportar Excel"}
+        </button>
       </div>
     </div>
   );
