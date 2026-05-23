@@ -13,7 +13,7 @@ Route::post('/v1/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
 
     Route::post('/messages', [MessageController::class, 'store']);
-    Route::get('/messages/{uuid}', [MessageController::class, 'show']);
+    Route::get('/messages', [MessageController::class, 'index']);
     Route::delete('/messages/{uuid}', [MessageController::class, 'cancel']);
 
     Route::apiResource('/templates', TemplateController::class);

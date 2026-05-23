@@ -12,6 +12,29 @@ use Illuminate\Support\Facades\Log;
 
 class MessageController extends Controller
 {
+    public function index()
+{
+    $messages = Message::query()
+
+        ->latest()
+
+        ->take(50)
+
+        ->get([
+            'id',
+            'channel',
+            'recipient_masked',
+            'status',
+            'attempts',
+            'scheduled_at',
+            'sent_at',
+            'delivered_at',
+            'read_at',
+            'created_at',
+        ]);
+
+    return response()->json($messages);
+}
     public function store(Request $request)
     {
         $data = $request->validate([

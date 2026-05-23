@@ -196,3 +196,53 @@ Promise<Template[]> {
 
   return result;
 }
+
+export async function getMessages() {
+
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(
+    "http://localhost:8000/api/v1/messages",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "No se pudieron cargar los mensajes."
+    );
+  }
+
+  return response.json();
+}
+
+export async function deleteMessage(
+  uuid: string
+) {
+
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(
+    `http://localhost:8000/api/v1/messages/${uuid}`,
+    {
+      method: "DELETE",
+
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "No se pudo eliminar el mensaje."
+    );
+  }
+
+  return response.json();
+}

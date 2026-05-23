@@ -17,20 +17,39 @@ import {
   getReportsKpis,
   sendMessage,
   getTemplates,
+  getMessages,
+  deleteMessage,
 } from "../../services/api";
 
 import type { Template } from "../../services/api";
 
 import styles from "./dashboard.module.css";
 
-type Section = "home" | "messages" | "templates" | "reports";
-
+type Section =
+  | "home"
+  | "messages"
+  | "history"
+  | "templates"
+  | "reports";
 type Kpis = {
   total_messages: number;
   active_templates: number;
   connected_channels: number;
   success_rate: string;
   failed_messages: number;
+};
+
+type Message = {
+  id: string;
+  channel: string;
+  recipient_masked: string;
+  status: string;
+  attempts: number;
+  scheduled_at: string | null;
+  sent_at: string | null;
+  delivered_at: string | null;
+  read_at: string | null;
+  created_at: string;
 };
 
 export default function Dashboard() {
@@ -80,22 +99,27 @@ export default function Dashboard() {
   };
 
   const menuItems = [
-    {
-      id: "home" as Section,
-      label: "Inicio",
-      icon: LayoutDashboard,
-    },
-    {
-      id: "messages" as Section,
-      label: "Mensajes",
-      icon: Mail,
-    },
-    {
-      id: "reports" as Section,
-      label: "Reportes",
-      icon: BarChart3,
-    },
-  ];
+  {
+    id: "home" as Section,
+    label: "Inicio",
+    icon: LayoutDashboard,
+  },
+  {
+    id: "messages" as Section,
+    label: "Mensajes",
+    icon: Mail,
+  },
+  {
+    id: "history" as Section,
+    label: "Historial",
+    icon: FileText,
+  },
+  {
+    id: "reports" as Section,
+    label: "Reportes",
+    icon: BarChart3,
+  },
+];
 
   if (loading) {
     return (
@@ -197,7 +221,9 @@ export default function Dashboard() {
           {activeSection === "messages" && (
             <MessagesSection />
           )}
-
+          {activeSection === "history" && (
+            <HistorySection />
+          )}
           {activeSection === "templates" && (
             <TemplatesSection />
           )}
@@ -716,6 +742,384 @@ function MessagesSection() {
           </form>
         </div>
       </div>
+    </div>
+  );
+}
+
+function HistorySection() {
+
+  const [messages, setMessages] =
+    useState<Message[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const [processingId, setProcessingId] =
+    useState<string | null>(null);
+
+  /*
+  ─────────────────────────────────────────────
+  LOAD MESSAGES
+  ─────────────────────────────────────────────
+  */
+
+  const loadMessages = async () => {
+
+    try {
+
+      const data =
+        await getMessages();
+
+      setMessages(data);
+
+    } catch (err) {
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Error al cargar mensajes."
+      );
+
+    } finally {
+
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+
+    loadMessages();
+
+  }, []);
+
+  /*
+  ─────────────────────────────────────────────
+  DELETE
+  ─────────────────────────────────────────────
+  */
+
+  const handleDelete = async (
+    id: string
+  ) => {
+
+    const confirmed =
+      window.confirm(
+        "¿Eliminar este mensaje?"
+      );
+
+    if (!confirmed) return;
+
+    try {
+
+      setProcessingId(id);
+
+      await deleteMessage(id);
+
+      setMessages((prev) =>
+        prev.filter(
+          (msg) => msg.id !== id
+        )
+      );
+
+    } catch (err) {
+
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Error al eliminar."
+      );
+
+    } finally {
+
+      setProcessingId(null);
+    }
+  };
+
+  /*
+  ─────────────────────────────────────────────
+  CANCEL
+  ─────────────────────────────────────────────
+  */
+
+  const handleCancel = async (
+    id: string
+  ) => {
+
+    const confirmed =
+      window.confirm(
+        "¿Cancelar mensaje programado?"
+      );
+
+    if (!confirmed) return;
+
+    try {
+
+      setProcessingId(id);
+
+      await deleteMessage(id);
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === id
+            ? {
+                ...msg,
+                status:
+                  "cancelado",
+              }
+            : msg
+        )
+      );
+
+    } catch (err) {
+
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Error al cancelar."
+      );
+
+    } finally {
+
+      setProcessingId(null);
+    }
+  };
+
+  return (
+    <div className={styles.card}>
+
+      <p className={styles.sectionLabel}>
+        Historial
+      </p>
+
+      <h2 className={styles.cardTitle}>
+        Historial de mensajes
+      </h2>
+
+      <p className={styles.cardDescription}>
+        Visualiza mensajes enviados,
+        programados y cancelados.
+      </p>
+
+      {loading && (
+        <p>Cargando mensajes...</p>
+      )}
+
+      {error && (
+        <p className={styles.errorText}>
+          {error}
+        </p>
+      )}
+
+      {!loading &&
+        messages.length === 0 && (
+          <p>
+            No hay mensajes
+            registrados.
+          </p>
+        )}
+
+      {!loading &&
+        messages.length > 0 && (
+
+        <div
+          className={
+            styles.tableWrapper
+          }
+        >
+
+          <table
+            className={
+              styles.messagesTable
+            }
+          >
+
+            <thead>
+
+              <tr>
+
+                <th>
+                  Canal
+                </th>
+
+                <th>
+                  Destinatario
+                </th>
+
+                <th>
+                  Estado
+                </th>
+
+                <th>
+                  Intentos
+                </th>
+
+                <th>
+                  Programado
+                </th>
+
+                <th>
+                  Enviado
+                </th>
+
+                <th>
+                  Entregado
+                </th>
+
+                <th>
+                  Leído
+                </th>
+
+                <th>
+                  Acciones
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {messages.map(
+                (msg) => (
+
+                <tr
+                  key={msg.id}
+                >
+
+                  <td>
+                    {
+                      msg.channel
+                    }
+                  </td>
+
+                  <td>
+                    {
+                      msg.recipient_masked
+                    }
+                  </td>
+
+                  <td>
+
+                    <span
+                      className={`${styles.statusBadge} ${
+                        styles[
+                          msg.status
+                        ]
+                      }`}
+                    >
+                      {
+                        msg.status
+                      }
+                    </span>
+
+                  </td>
+
+                  <td>
+                    {
+                      msg.attempts
+                    }
+                  </td>
+
+                  <td>
+                    {msg.scheduled_at
+                      ? new Date(
+                          msg.scheduled_at
+                        ).toLocaleString()
+                      : "-"}
+                  </td>
+
+                  <td>
+                    {msg.sent_at
+                      ? new Date(
+                          msg.sent_at
+                        ).toLocaleString()
+                      : "-"}
+                  </td>
+
+                  <td>
+                    {msg.delivered_at
+                      ? new Date(
+                          msg.delivered_at
+                        ).toLocaleString()
+                      : "-"}
+                  </td>
+
+                  <td>
+                    {msg.read_at
+                      ? new Date(
+                          msg.read_at
+                        ).toLocaleString()
+                      : "-"}
+                  </td>
+
+                  <td>
+
+                    <div
+                      className={
+                        styles.actionsGroup
+                      }
+                    >
+
+                      {(msg.status ===
+                        "programado" ||
+                        msg.status ===
+                          "encolado") && (
+
+                        <button
+                          className={
+                            styles.cancelButton
+                          }
+                          onClick={() =>
+                            handleCancel(
+                              msg.id
+                            )
+                          }
+                          disabled={
+                            processingId ===
+                            msg.id
+                          }
+                        >
+
+                          Cancelar
+
+                        </button>
+                      )}
+
+                      <button
+                        className={
+                          styles.deleteButton
+                        }
+                        onClick={() =>
+                          handleDelete(
+                            msg.id
+                          )
+                        }
+                        disabled={
+                          processingId ===
+                          msg.id
+                        }
+                      >
+
+                        {processingId ===
+                        msg.id
+                          ? "Procesando..."
+                          : "Eliminar"}
+
+                      </button>
+
+                    </div>
+
+                  </td>
+
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
