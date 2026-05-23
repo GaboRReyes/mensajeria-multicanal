@@ -3,32 +3,43 @@
 namespace App\Http\Controllers;
 use App\Models\Message;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
-use App\Jobs\SendEmailJob;
+use Illuminate\Support\Facades\Mail;
 
 class MessageController extends Controller
 {
-    public function store(Request $request){
-        $providerId = DB::table('providers')->first()->id;
-$message = Message::create([
-    'id'               => Str::uuid(),
-    'user_id'          => auth()->id(),
-    'provider_id'      => $providerId,
-    'channel'          => $request->channel,
-    'recipient_hash'   => hash('sha256', $request->recipient),
-    'recipient_masked' => 't***@gmail.com',
-    'idempotency_key'  => $request->idempotency_key,
-    'status'           => 'encolado',
-]);
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'recipient' => 'required|string|max:255',
+            'content' => 'required|string',
+            'channel' => 'required|in:whatsapp,email,both',
+        ]);
 
-SendEmailJob::dispatch($message->id);
+        $sentChannels = [];
 
-return response()->json([
-    'message' => 'Mensaje encolado',
-    'data' => $message
-]);
-}
+        if (in_array($data['channel'], ['email', 'both'], true)) {
+            Mail::raw($data['content'], function ($message) use ($data) {
+                $message->to($data['recipient'])
+                    ->subject('Mensaje desde el panel');
+            });
+
+            $sentChannels[] = 'email';
+        }
+
+        if (in_array($data['channel'], ['whatsapp', 'both'], true)) {
+            // Aquí puedes integrar tu servicio de WhatsApp real.
+            // Por ahora devolvemos una respuesta simulada de envío.
+            $sentChannels[] = 'whatsapp';
+        }
+
+        return response()->json([
+            'success' => true,
+            'recipient' => $data['recipient'],
+            'channel' => $data['channel'],
+            'sent_channels' => $sentChannels,
+            'message' => 'Mensaje procesado correctamente',
+        ]);
+    }
 
     public function show($uuid)
     {

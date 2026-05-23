@@ -20,13 +20,11 @@ class DatabaseSeeder extends Seeder
         'email' => 'test@example.com',
     ]);
 
-    $this->call([
-    ProviderSeeder::class, // ← primero
-    MessageSeeder::class,
-]);
 
-    $this->call([
-        MessageSeeder::class,
-    ]);
-}
+        User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => bcrypt('password'),
+        ]);
+    }
 }

@@ -2,72 +2,89 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Message;
-
-use Barryvdh\DomPDF\Facade\Pdf;
-use Maatwebsite\Excel\Facades\Excel;
-
 use App\Exports\KpisExport;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
-    public function kpis(Request $request)
+    private function gatherKpis(): array
     {
-        $from = $request->input('from', now()->subDays(30)->toDateString());
-        $to   = $request->input('to', now()->toDateString());
+        $totalMessages = DB::table('messages')->count();
+        $pendingMessages = DB::table('messages')
+            ->whereIn('status', ['programado', 'encolado'])
+            ->count();
 
-        return response()->json([
+        $statusCounts = DB::table('messages')
+            ->select('status', DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
 
-            'volumen' => Message::whereBetween('created_at', [$from, $to])
-                ->selectRaw('channel, status, COUNT(*) as total')
-                ->groupBy('channel', 'status')
-                ->get(),
+        $channelCounts = DB::table('messages')
+            ->select('channel', DB::raw('count(*) as total'))
+            ->groupBy('channel')
+            ->pluck('total', 'channel')
+            ->toArray();
 
-            'tasa_entrega' => Message::whereBetween('created_at', [$from, $to])
-                ->selectRaw('
-                    channel,
-                    100.0 * SUM(
-                        CASE WHEN delivered_at IS NOT NULL THEN 1 ELSE 0 END
-                    ) /
-                    NULLIF(
-                        SUM(CASE WHEN sent_at IS NOT NULL THEN 1 ELSE 0 END),
-                        0
-                    ) as tasa
-                ')
-                ->groupBy('channel')
-                ->get(),
+        $activeTemplates = DB::table('templates')->count();
 
-            'tendencia' => Message::whereBetween('created_at', [$from, $to])
-                ->selectRaw("
-                    DATE(created_at) as dia,
-                    channel,
-                    COUNT(*) as total
-                ")
-                ->groupBy('dia', 'channel')
-                ->orderBy('dia')
-                ->get()
+        $pendingList = DB::table('messages')
+            ->whereIn('status', ['programado', 'encolado'])
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get([
+                'id',
+                'channel',
+                'status',
+                'recipient_masked',
+                'scheduled_at',
+                'created_at',
+            ]);
 
-        ]);
+        return [
+            'total_messages' => $totalMessages,
+            'pending_messages' => $pendingMessages,
+            'status_counts' => $statusCounts,
+            'channel_counts' => $channelCounts,
+            'active_templates' => $activeTemplates,
+            'pending_list' => $pendingList,
+            'updated_at' => now()->toDateTimeString(),
+        ];
+    }
+
+    public function kpis()
+    {
+        return response()->json($this->gatherKpis());
     }
 
     public function export(string $format, Request $request)
     {
-        $data = $this->kpis($request)->getData(true);
+        $reportData = $this->gatherKpis();
+        $kpis = [
+            ['Métrica', 'Valor'],
+            ['Total mensajes', $reportData['total_messages']],
+            ['Mensajes pendientes', $reportData['pending_messages']],
+            ['Plantillas activas', $reportData['active_templates']],
+        ];
 
-        return match ($format) {
+        foreach ($reportData['status_counts'] as $status => $count) {
+            $kpis[] = ["Status: {$status}", $count];
+        }
 
-            'pdf' => Pdf::loadView('reports.kpis', [
-                    'data' => $data
-                ])
-                ->download('reporte-mensajeria.pdf'),
+        if ($format === 'pdf') {
+            $pdf = Pdf::loadView('reports.kpis', [
+                'reportData' => $reportData,
+            ]);
+            return $pdf->download('reportes-kpis.pdf');
+        }
 
-            'excel' => Excel::download(
-                new KpisExport($data),
-                'reporte-mensajeria.xlsx'
-            ),
+        if ($format === 'excel') {
+            return Excel::download(new KpisExport($kpis), 'reportes-kpis.xlsx');
+        }
 
-            default => abort(404),
-        };
+        return response()->json(['error' => 'Formato inválido.'], 400);
     }
 }

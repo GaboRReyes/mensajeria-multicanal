@@ -4,30 +4,35 @@ namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromArray;
 
-class KpisExport implements FromArray
+use Maatwebsite\Excel\Concerns\WithHeadings;
+
+class KpisExport implements FromArray, WithHeadings
 {
-    public function __construct(
-        private array $data
-    ) {}
+    private array $rows;
+
+    public function __construct(array $rows)
+    {
+        $this->rows = $rows;
+    }
 
     public function array(): array
     {
-        return [
-            ['Reporte KPIs'],
+        if (empty($this->rows)) {
+            return [];
+        }
 
-            [],
+        $first = reset($this->rows);
+        if (is_array($first)) {
+            return $this->rows;
+        }
 
-            ['Volumen'],
+        return array_map(function ($label, $value) {
+            return [$label, $value];
+        }, array_keys($this->rows), $this->rows);
+    }
 
-            ['Canal', 'Estado', 'Total'],
-
-            ...collect($this->data['volumen'])
-                ->map(fn ($item) => [
-                    $item['channel'],
-                    $item['status'],
-                    $item['total']
-                ])
-                ->toArray()
-        ];
+    public function headings(): array
+    {
+        return ['Métrica', 'Valor'];
     }
 }
