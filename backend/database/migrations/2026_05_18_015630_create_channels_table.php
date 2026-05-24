@@ -6,20 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('channels', function (Blueprint $table) {
             $table->id();
+            $table->string('name');                       // ej. "Email institucional", "WhatsApp Tec"
+            $table->enum('type', ['email', 'whatsapp']);   // tipo de canal
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
+
+            $table->index('type');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('channels');

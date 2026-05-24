@@ -57,6 +57,12 @@ class WhatsAppWebhookController extends Controller
      */
     private function isValidSignature(Request $request): bool
     {
+        // En entorno local, permitir webhooks de prueba sin firma
+        // (los POST de "Probar" de Meta y curls de desarrollo no vienen firmados)
+        if (app()->environment('local')) {
+            return true;
+        }
+
         $signature = $request->header('X-Hub-Signature-256');
         $secret    = config('services.whatsapp.app_secret');
 
