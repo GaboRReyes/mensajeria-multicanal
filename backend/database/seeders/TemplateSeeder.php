@@ -2,33 +2,45 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\Template;
 
 class TemplateSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        \App\Models\Template::query()->insert([
+        $templates = [
             [
                 'name' => 'Invitacion',
-                'subject' => 'Invitación a nuestro evento',
-                'content' => "Hola {name},\n\nTe invitamos cordialmente a nuestro evento el próximo {date}.\n\nSaludos,\nEquipo",
-                'channel' => 'whatsapp',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'whatsapp_template_name' => 'Invitación a nuestro evento',
+                'body' => "Hola {name},\n\nTe invitamos cordialmente a nuestro evento el próximo {date}.\n\nSaludos,\nEquipo",
+                'channel' => 'email',
+                'language' => 'en_US',
+                'variables' => [],
+                'is_active' => true,
             ],
             [
                 'name' => 'Saludo de empresa',
-                'subject' => 'Bienvenida a la empresa',
-                'content' => "Estimado/a {name},\n\nLe damos la bienvenida a {company}. Estamos encantados de contar con usted.\n\nAtentamente,\nEquipo",
+                'whatsapp_template_name' => 'Bienvenida a la empresa',
+                'body' => "Estimado/a {name},\n\nLe damos la bienvenida a {company}. Estamos encantados de contar con usted.\n\nAtentamente,\nEquipo",
                 'channel' => 'email',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'language' => 'en_US',
+                'variables' => [],
+                'is_active' => true,
             ],
-        ]);
+            [
+                'name' => 'Hola Mundo (WhatsApp)',
+                'whatsapp_template_name' => 'hello_world',
+                'channel' => 'whatsapp',
+                'body' => 'Plantilla de bienvenida de prueba de Meta',
+                'language' => 'en_US',
+                'variables' => [],
+                'is_active' => true,
+            ],
+        ];
+
+        foreach ($templates as $template) {
+            Template::create($template);
+        }
     }
 }

@@ -557,6 +557,81 @@
   font-size: 0.8rem;
   color: var(--muted);
 }
+
+/* Body preview en el dropdown */
+.templateOptionBody {
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  color: #52525b;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.templateOptionBodyEmpty {
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
+  color: #a1a1aa;
+  font-style: italic;
+}
+
+/* Opción seleccionada actualmente */
+.templateOptionActive {
+  background: #f0fdf4;
+  border-left: 3px solid #16a34a;
+}
+
+/* Banner de plantilla aplicada */
+.templateBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.9rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  color: #166534;
+}
+
+.templateBanner svg {
+  flex-shrink: 0;
+  color: #16a34a;
+}
+
+.templateBanner span {
+  flex: 1;
+  min-width: 0;
+}
+
+.templateBannerSubject {
+  color: #4ade80;
+  font-weight: 400;
+}
+
+.templateBannerClear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #16a34a;
+  cursor: pointer;
+  padding: 0.15rem;
+  border-radius: 4px;
+  transition: background 0.12s ease;
+  flex-shrink: 0;
+}
+
+.templateBannerClear:hover {
+  background: #bbf7d0;
+}
+
+/* Textarea con plantilla aplicada: borde verde sutil */
+.textareaWithTemplate {
+  border-color: #86efac;
+  background: #f9fffe;
+}
 .tableWrapper {
   overflow-x: auto;
   margin-top: 1rem;
@@ -668,4 +743,213 @@
 .cancelButton:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* ── SCHEDULE ── */
+
+.scheduleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.scheduleLabel {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* ── TEMPLATE FORM (TemplatesSection) ── */
+
+.templateFormCard {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.templateFormCard h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formActions {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+.secondaryButton {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 1.25rem;
+  background: white;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.secondaryButton:hover {
+  background: #f4f4f5;
+}
+
+.dangerButton {
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 0.85rem;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dangerButton:hover {
+  background: #fecaca;
+}
+
+.ghostButton {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.85rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ghostButton:hover {
+  background: #f4f4f5;
+  color: var(--text);
+}
+
+.templateItemHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.templateItemActions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* ── CHARTS (ReportsSection) ── */
+
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 800px) {
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chartCard {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  background: white;
+}
+
+.chartCard h4 {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.exportRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.exportButton {
+  border: none;
+  border-radius: 10px;
+  padding: 0.8rem 1.4rem;
+  background: #18181b;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.exportButton:hover {
+  background: #27272a;
+}
+
+.exportButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── HEADER ROW (section header + action button) ── */
+
+.sectionHeaderRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+/* ── CHANNEL TAG ── */
+
+.channelTag {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.channelEmail {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.channelWhatsapp {
+  background: #dcfce7;
+  color: #166534;
 }

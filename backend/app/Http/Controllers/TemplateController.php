@@ -18,10 +18,10 @@ class TemplateController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
+            'name'    => 'required|string|max:255',
             'subject' => 'nullable|string|max:255',
-            'content' => 'nullable|string',
-            'channel' => 'nullable|string|max:50',
+            'body'    => 'required|string',
+            'channel' => 'required|in:email,whatsapp',
         ]);
 
         $template = Template::create($data);
@@ -40,10 +40,10 @@ class TemplateController extends Controller
         $template = Template::findOrFail($id);
 
         $data = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
+            'name'    => 'sometimes|required|string|max:255',
             'subject' => 'nullable|string|max:255',
-            'content' => 'nullable|string',
-            'channel' => 'nullable|string|max:50',
+            'body'    => 'sometimes|required|string',
+            'channel' => 'sometimes|required|in:email,whatsapp',
         ]);
 
         $template->update($data);

@@ -13,21 +13,23 @@ class WhatsAppService
     {
         $version = config('services.whatsapp.api_version', 'v25.0');
         $phoneId = config('services.whatsapp.phone_number_id');
-        $this->token = config('services.whatsapp.access_token');
+        $token   = config('services.whatsapp.access_token');
 
+        // Validar antes de asignar: evita TypeError en PHP 8+ (typed property = null crash)
         if (empty($phoneId)) {
             throw new \InvalidArgumentException(
-                'WhatsApp phone_number_id no está configurado (services.whatsapp.phone_number_id).'
+                'WhatsApp phone_number_id no configurado (WHATSAPP_PHONE_NUMBER_ID en .env).'
             );
         }
 
-        if (empty($this->token)) {
+        if (empty($token)) {
             throw new \InvalidArgumentException(
-                'WhatsApp access_token no está configurado (services.whatsapp.access_token).'
+                'WhatsApp access_token no configurado (WHATSAPP_ACCESS_TOKEN en .env).'
             );
         }
 
-        $this->url = "https://graph.facebook.com/{$version}/{$phoneId}/messages";
+        $this->token = $token;
+        $this->url   = "https://graph.facebook.com/{$version}/{$phoneId}/messages";
     }
 
     /**

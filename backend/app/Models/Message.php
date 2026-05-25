@@ -25,12 +25,16 @@ class Message extends Model
     ];
 
     protected $casts = [
-        'variables' => 'array',
-        'last_error' => 'array',
-        'scheduled_at' => 'datetime',
-        'sent_at' => 'datetime',
-        'delivered_at' => 'datetime',
-        'read_at' => 'datetime',
+    'variables' => 'array',
+    'last_error' => 'array',
+
+    'scheduled_at' => 'datetime',
+    'sent_at' => 'datetime',
+    'delivered_at' => 'datetime',
+    'read_at' => 'datetime',
+
+    'created_at' => 'datetime',
+    'updated_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

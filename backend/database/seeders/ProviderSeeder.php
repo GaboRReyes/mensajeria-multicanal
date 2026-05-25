@@ -12,15 +12,17 @@ class ProviderSeeder extends Seeder
         DB::table('providers')->insert([
             [
                 'name'       => 'Resend',
-                'channel'    => 'email',
-                'active'     => true,
+                'channel_id' => 2 ,
+                'is_active'     => true,
                 'created_at' => now(),
+                'driver' => 'meta_cloud',
                 'updated_at' => now(),
             ],
             [
                 'name'       => 'Twilio',
-                'channel'    => 'whatsapp',
-                'active'     => true,
+                'channel_id' => 1 ,
+                'is_active'     => true,
+                'driver' => 'twilio',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
