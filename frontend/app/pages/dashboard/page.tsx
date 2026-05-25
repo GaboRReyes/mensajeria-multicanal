@@ -251,11 +251,20 @@ function MessagesSection() {
     setStatus(null);
     setError(null);
     setSending(true);
+    // WhatsApp (solo o en 'ambos') sin plantilla = texto libre,
+    // que solo funciona en ventana de 24h. Avisar al usuario.
+    if ((channel === "whatsapp" || channel === "both") && !selectedTemplate) {
+      const ok = window.confirm(
+        "Estás enviando texto libre por WhatsApp. Esto solo funciona si el contacto te escribió en las últimas 24h. " +
+        "Para iniciar conversación, selecciona una plantilla.\n\n¿Continuar de todos modos?"
+      );
+      if (!ok) { setSending(false); return; }
+    }
 
     const payload = {
       to,
       template_id: selectedTemplate?.id ?? null,
-      variables: { body: content },
+      variables: selectedTemplate ? { body: content } : { text: content },
       scheduled_at: scheduledAt || null,
     };
 

@@ -49,10 +49,17 @@ class SendWhatsAppMessageJob implements ShouldQueue
             return;
         }
 
-        $bodyVars = $message->variables['body'] ?? [];
+        $freeText = $message->variables['text'] ?? null;
 
-        $response = $whatsapp->sendTemplate($to, $templateName, $lang, $bodyVars);
-
+        if (! $template && $freeText) {
+            $response = $whatsapp->sendText($to, $freeText);
+        } else {
+            $templateName = $template?->whatsapp_template_name ?? 'hello_world';
+            $lang = $template?->language ?? 'en_US';
+            $expectedVars = $template?->variables ?? [];
+            $bodyVars = ! empty($expectedVars) ? ($message->variables['body'] ?? []) : [];
+            $response = $whatsapp->sendTemplate($to, $templateName, $lang, $bodyVars);
+        }
         $wamid = $response['messages'][0]['id'] ?? null;
 
         $message->update([
