@@ -22,3 +22,10 @@ Route::prefix('v1/webhooks')->group(function () {
     Route::get('whatsapp', [WhatsAppWebhookController::class, 'verify']);
     Route::post('whatsapp', [WhatsAppWebhookController::class, 'handle']);
 });
+Route::get('/v1/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'service' => 'mensajeria-multicanal',
+        'timestamp' => now()->toIso8601String(),
+    ]);
+});
