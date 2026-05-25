@@ -6,24 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('templates', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->index();
+            $table->string('name');
+            $table->string('whatsapp_template_name')->nullable();
+            $table->enum('channel', ['email', 'whatsapp']);
             $table->string('subject')->nullable();
-            $table->text('content')->nullable();
-            $table->string('channel')->nullable();
+            $table->text('body');
+            $table->string('language', 10)->default('es_MX');
+            $table->json('variables')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
+
+            $table->index(['channel', 'is_active']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('templates');

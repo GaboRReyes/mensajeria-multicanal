@@ -2,105 +2,54 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Message extends Model
 {
     use HasUuids;
 
     protected $table = 'messages';
-
     protected $primaryKey = 'id';
-
     public $incrementing = false;
-
     protected $keyType = 'string';
 
-    const CREATED_AT = 'created_at';
-
-    const UPDATED_AT = 'updated_at';
-
     protected $fillable = [
-        'id',
-        'user_id',
-        'template_id',
-        'provider_id',
-
-        'topic',
-        'extension',
-
-        'payload',
-
-        'channel',
-
-        'event',
-
-        'recipient',
-
-        'recipient_hash',
-
-        'recipient_masked',
-
-        'private',
-
-        'variables',
-
-        'idempotency_key',
-
-        'status',
-
-        'provider_message_id',
-
-        'attempts',
-
-        'last_error',
-
-        'scheduled_at',
-
-        'inserted_at',
-
-        'sent_at',
-
-        'delivered_at',
-
-        'read_at',
+        'user_id', 'template_id', 'provider_id', 'channel',
+        'recipient_hash', 'recipient_masked', 'variables',
+        'idempotency_key', 'status', 'provider_message_id',
+        'attempts', 'last_error',
+        'scheduled_at', 'sent_at', 'delivered_at', 'read_at',
     ];
 
     protected $casts = [
-
-        'payload' => 'array',
-
         'variables' => 'array',
-
         'last_error' => 'array',
-
-        'private' => 'boolean',
-
         'scheduled_at' => 'datetime',
-
-        'inserted_at' => 'datetime',
-
         'sent_at' => 'datetime',
-
         'delivered_at' => 'datetime',
-
         'read_at' => 'datetime',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | RELATIONS
-    |--------------------------------------------------------------------------
-    */
-
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function template()
+    public function template(): BelongsTo
     {
         return $this->belongsTo(Template::class);
+    }
+
+    public function provider(): BelongsTo
+    {
+        return $this->belongsTo(Provider::class);
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(MessageEvent::class);
     }
 }

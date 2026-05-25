@@ -1,34 +1,24 @@
 <?php
 
+use App\Jobs\SendWhatsAppMessageJob;
+use App\Models\Message;
 use Illuminate\Support\Facades\Schedule;
 
-use App\Models\Message;
-
-use App\Jobs\SendEmailJob;
-use App\Jobs\SendWhatsAppJob;
-
+// Promueve mensajes programados cuya hora ya llegó
 Schedule::call(function () {
-
     Message::where('status', 'programado')
         ->where('scheduled_at', '<=', now())
-        ->chunkById(100, function ($messages) {
+        ->chunkById(100, function ($chunk) {
+            $chunk->each(function ($m) {
+                $m->update(['status' => 'encolado']);
 
-            foreach ($messages as $message) {
-
-                if ($message->channel === 'email') {
-
-                    SendEmailJob::dispatch($message->id);
-
+                if ($m->channel === 'email') {
+                    if (class_exists(\App\Jobs\SendEmailJob::class)) {
+                        \App\Jobs\SendEmailJob::dispatch($m->id);
+                    }
                 } else {
-
-                    SendWhatsAppJob::dispatch($message->id);
-
+                    SendWhatsAppMessageJob::dispatch($m->id);
                 }
-
-                $message->update([
-                    'status' => 'en_cola'
-                ]);
-            }
+            });
         });
-
 })->everyMinute();
