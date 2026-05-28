@@ -2,15 +2,17 @@
 
 namespace App\Jobs;
 
-use Throwable;
 use App\Models\Message;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
+use App\Models\MessageEvent;
+use App\Services\TemplateRenderer;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class SendEmailJob implements ShouldQueue
 {
@@ -19,14 +21,9 @@ class SendEmailJob implements ShouldQueue
     public int $tries = 3;
     public array $backoff = [60, 300, 1800];
 
-    public string $messageId;
+    public function __construct(public string $messageId) {}
 
-    public function __construct(string $messageId)
-    {
-        $this->messageId = $messageId;
-    }
-
-    public function handle(): void
+    public function handle(TemplateRenderer $renderer): void
     {
         $message = Message::with('template')->find($this->messageId);
 
@@ -35,62 +32,94 @@ class SendEmailJob implements ShouldQueue
             return;
         }
 
-        if ($message->status === 'cancelado') {
+        if ($message->status === Message::STATUS_CANCELLED) {
             return;
         }
 
+        $message->update(['status' => Message::STATUS_PROCESSING]);
         $message->increment('attempts');
 
         try {
-            // Destinatario: ahora vive en variables['to'] (no en recipient)
-            $to = $message->variables['to'] ?? null;
+            $to       = $message->variables['to'] ?? null;
+            $bodyVars = is_array($message->variables['body'] ?? null)
+                        ? ($message->variables['body'] ?? [])
+                        : [];
+
             if (! $to) {
                 throw new \RuntimeException('No recipient (variables.to) provided');
             }
 
             $template = $message->template;
-            $subject  = $template?->subject ?? 'Mensaje del Servicio Multicanal';
-            $body     = $template?->body ?? '';
 
-            // Reemplazo simple de variables {{clave}} con los valores enviados
-            $vars = $message->variables['body'] ?? [];
-            foreach ($vars as $key => $value) {
-                $body = str_replace('{{' . $key . '}}', (string) $value, $body);
+            // Asunto
+            $subject = ! empty($bodyVars['subject'])
+                ? $bodyVars['subject']
+                : ($template ? $renderer->renderSubject($template, $bodyVars)
+                             : 'Mensaje del Servicio Multicanal');
+
+            // Cuerpo: texto libre > template renderizado
+            if (! empty($bodyVars['text'])) {
+                $body = $bodyVars['text'];
+            } elseif ($template) {
+                $body = $renderer->render($template, $bodyVars);
+            } else {
+                $body = '';
             }
 
-            Mail::raw($body, function ($mail) use ($to, $subject) {
-                $mail->to($to)->subject($subject);
-            });
+            if (empty(trim($body))) {
+                throw new \RuntimeException('El cuerpo del correo está vacío.');
+            }
+
+            Mail::raw($body, fn ($mail) => $mail->to($to)->subject($subject));
 
             $message->update([
-                'status'  => 'enviado',
+                'status'  => Message::STATUS_SENT,
                 'sent_at' => now(),
             ]);
 
-            // Registrar evento (auditoría, igual que WhatsApp)
-            \App\Models\MessageEvent::create([
+            MessageEvent::create([
                 'message_id'  => $message->id,
-                'status'      => 'enviado',
+                'status'      => Message::STATUS_SENT,
                 'occurred_at' => now(),
             ]);
 
-            Log::info('SendEmailJob: email enviado', ['id' => $message->id]);
+            Log::info('SendEmailJob: enviado', ['id' => $message->id]);
 
-        } catch (\Throwable $e) {
+            if ($message->campaign_id) {
+                UpdateCampaignStatsJob::dispatch($message->campaign_id)->onQueue('low');
+            }
+
+        } catch (Throwable $e) {
             $message->update([
-                'status'     => 'fallido',
+                'status'     => Message::STATUS_FAILED,
                 'last_error' => ['message' => $e->getMessage()],
             ]);
 
-            \App\Models\MessageEvent::create([
+            MessageEvent::create([
                 'message_id'  => $message->id,
-                'status'      => 'fallido',
+                'status'      => Message::STATUS_FAILED,
                 'error'       => $e->getMessage(),
                 'occurred_at' => now(),
             ]);
 
             Log::error('SendEmailJob: error - ' . $e->getMessage());
+
+            if ($message->campaign_id) {
+                UpdateCampaignStatsJob::dispatch($message->campaign_id)->onQueue('low');
+            }
+
             throw $e;
+        }
+    }
+
+    public function failed(Throwable $e): void
+    {
+        $message = Message::find($this->messageId);
+        if ($message) {
+            $message->update([
+                'status'     => Message::STATUS_FAILED,
+                'last_error' => ['message' => $e->getMessage(), 'at' => now()->toIso8601String()],
+            ]);
         }
     }
 }

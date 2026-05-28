@@ -82,7 +82,10 @@ export default function Dashboard() {
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
     if (!token) { router.push("/pages/login"); return; }
-    if (userData) setUser(JSON.parse(userData));
+    const parsed = userData ? JSON.parse(userData) : null;
+    if (parsed?.role === "admin") { router.replace("/pages/admin"); return; }
+    if (parsed?.role === "developer") { router.replace("/pages/dev"); return; }
+    if (parsed) setUser(parsed);
     setLoading(false);
   }, [router]);
 
@@ -210,6 +213,7 @@ function HomeSection({
 function MessagesSection() {
   const [to, setTo]             = useState("");
   const [content, setContent]   = useState("");
+  const [subject, setSubject]   = useState("");
   const [channel, setChannel]   = useState<"whatsapp" | "email" | "both">("whatsapp");
   const [scheduledAt, setScheduledAt] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
@@ -237,6 +241,7 @@ function MessagesSection() {
   const applyTemplate = (t: Template) => {
     setSelectedTemplate(t);
     setContent(t.body ?? "");
+    setSubject(t.subject ?? "");
     if (t.channel === "whatsapp" || t.channel === "email") setChannel(t.channel);
     setTemplatesOpen(false);
   };
@@ -244,6 +249,7 @@ function MessagesSection() {
   const clearTemplate = () => {
     setSelectedTemplate(null);
     setContent("");
+    setSubject("");
   };
 
   const handleSend = async (e: FormEvent<HTMLFormElement>) => {
@@ -261,10 +267,17 @@ function MessagesSection() {
       if (!ok) { setSending(false); return; }
     }
 
+    // Siempre se envía el texto del textarea como "text".
+    // Para email también se incluye el asunto personalizado.
+    const variables: Record<string, string> = { text: content };
+    if ((channel === "email" || channel === "both") && subject.trim()) {
+      variables.subject = subject.trim();
+    }
+
     const payload = {
       to,
       template_id: selectedTemplate?.id ?? null,
-      variables: selectedTemplate ? { body: content } : { text: content },
+      variables,
       scheduled_at: scheduledAt || null,
     };
 
@@ -280,7 +293,7 @@ function MessagesSection() {
             : `Mensaje encolado por ${channel === "email" ? "Email" : "WhatsApp"}.`
         );
       }
-      setTo(""); setContent(""); setScheduledAt(""); setSelectedTemplate(null);
+      setTo(""); setContent(""); setSubject(""); setScheduledAt(""); setSelectedTemplate(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al enviar el mensaje.");
     } finally {
@@ -374,6 +387,21 @@ function MessagesSection() {
                   <X size={13} />
                 </button>
               </div>
+            )}
+
+            {/* Asunto — solo visible cuando el canal incluye email */}
+            {(channel === "email" || channel === "both") && (
+              <input
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder={
+                  selectedTemplate?.subject
+                    ? `Asunto: ${selectedTemplate.subject}`
+                    : "Asunto del correo (opcional)"
+                }
+                className={styles.input}
+              />
             )}
 
             <textarea

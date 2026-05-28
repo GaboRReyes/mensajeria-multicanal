@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-use App\Models\Message;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
@@ -17,6 +17,10 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_active',
+        'monthly_limit',
+        'used_this_month',
+        'quota_reset_at',
     ];
 
     protected $hidden = [
@@ -28,17 +32,60 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'quota_reset_at'    => 'datetime',
+            'password'          => 'hashed',
+            'is_active'         => 'boolean',
         ];
     }
 
-    public function isAdmin(): bool
+    // ─── Helpers de rol ───────────────────────────────────────────────────────
+
+    public function isAdmin(): bool     { return $this->role === 'admin'; }
+    public function isClient(): bool    { return $this->role === 'client'; }
+    public function isDeveloper(): bool { return $this->role === 'developer'; }
+
+    public function hasRole(string|array $roles): bool
     {
-        return $this->role === 'admin';
+        return in_array($this->role, (array) $roles);
     }
 
-    public function messages()
+    // ─── Cuotas ───────────────────────────────────────────────────────────────
+
+    public function hasQuota(): bool
+    {
+        if ($this->monthly_limit === null) return true; // sin límite
+        return $this->used_this_month < $this->monthly_limit;
+    }
+
+    public function incrementUsage(int $count = 1): void
+    {
+        $this->increment('used_this_month', $count);
+    }
+
+    // ─── Relaciones ───────────────────────────────────────────────────────────
+
+    public function messages(): HasMany
     {
         return $this->hasMany(Message::class);
+    }
+
+    public function templates(): HasMany
+    {
+        return $this->hasMany(Template::class);
+    }
+
+    public function campaigns(): HasMany
+    {
+        return $this->hasMany(Campaign::class);
+    }
+
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(Contact::class);
+    }
+
+    public function apiKeys(): HasMany
+    {
+        return $this->hasMany(ApiKey::class);
     }
 }

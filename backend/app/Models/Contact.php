@@ -2,43 +2,38 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Template extends Model
+class Contact extends Model
 {
-    use HasFactory;
+    use HasUuids, SoftDeletes;
 
     protected $fillable = [
         'user_id',
         'name',
-        'whatsapp_template_name',
-        'channel',
-        'subject',
-        'body',
-        'language',
-        'variables',
+        'email',
+        'phone',
+        'metadata',
+        'tags',
         'is_active',
     ];
 
     protected $casts = [
-        'variables' => 'array',
+        'metadata'  => 'array',
+        'tags'      => 'array',
         'is_active' => 'boolean',
     ];
 
     // ─── Scopes ───────────────────────────────────────────────────────────────
 
-    /**
-     * Templates visibles para un usuario:
-     * los propios + los globales (user_id IS NULL).
-     */
     public function scopeForUser($query, int $userId)
     {
-        return $query->where(function ($q) use ($userId) {
-            $q->where('user_id', $userId)->orWhereNull('user_id');
-        });
+        return $query->where('user_id', $userId);
     }
 
     public function scopeActive($query)
@@ -53,20 +48,20 @@ class Template extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function campaigns(): BelongsToMany
+    {
+        return $this->belongsToMany(Campaign::class, 'campaign_contacts')
+            ->withPivot('variables')
+            ->withTimestamps();
+    }
+
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class);
     }
 
-    public function campaigns(): HasMany
-    {
-        return $this->hasMany(Campaign::class);
-    }
-
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    public function isGlobal(): bool
-    {
-        return $this->user_id === null;
-    }
+    public function hasEmail(): bool { return ! empty($this->email); }
+    public function hasPhone(): bool { return ! empty($this->phone); }
 }

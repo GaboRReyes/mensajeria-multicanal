@@ -1,45 +1,53 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Dev;
 
+use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\Provider;
 use App\Services\ChannelDispatcher;
 use Illuminate\Http\Request;
 
-class MessageController extends Controller
+/**
+ * Endpoints REST para developers que usan API Keys.
+ * Misma lógica que MessageController pero autenticado por API Key.
+ */
+class DevMessageController extends Controller
 {
     public function __construct(private ChannelDispatcher $dispatcher) {}
 
+    /**
+     * Listar mensajes del usuario autenticado con API Key.
+     */
     public function index(Request $request)
     {
-        $user = $request->user();
-
-        $query = $user->isAdmin()
-            ? Message::query()->with('user:id,name,email')
-            : Message::forUser($user->id);
-
-        $messages = $query
-            ->when($request->status, fn ($q) => $q->where('status', $request->status))
-            ->when($request->channel, fn ($q) => $q->where('channel', $request->channel))
+        $messages = Message::forUser($request->user()->id)
             ->latest()
             ->paginate(50, [
-                'id', 'user_id', 'channel', 'recipient_masked', 'status', 'attempts',
+                'id', 'channel', 'recipient_masked', 'status', 'attempts',
                 'scheduled_at', 'sent_at', 'delivered_at', 'campaign_id', 'created_at',
             ]);
 
         return response()->json($messages);
     }
 
+    /**
+     * Enviar un mensaje individual via API Key.
+     */
     public function store(Request $request)
     {
         $user = $request->user();
+        $apiKey = $request->get('_api_key');
+
+        // Verificar habilidad
+        if ($apiKey && ! $apiKey->can('messages:write')) {
+            return response()->json(['error' => 'API Key sin permiso para enviar mensajes.'], 403);
+        }
 
         if (! $user->hasQuota()) {
             return response()->json([
-                'error'          => 'Has alcanzado tu límite mensual de mensajes.',
-                'monthly_limit'  => $user->monthly_limit,
-                'used_this_month'=> $user->used_this_month,
+                'error'         => 'Cuota mensual alcanzada.',
+                'monthly_limit' => $user->monthly_limit,
             ], 429);
         }
 
@@ -52,6 +60,7 @@ class MessageController extends Controller
             'scheduled_at'    => 'nullable|date',
         ]);
 
+        // Idempotencia
         if (! empty($data['idempotency_key'])) {
             $existing = Message::where('idempotency_key', $data['idempotency_key'])->first();
             if ($existing) return response()->json($existing, 200);
@@ -62,7 +71,7 @@ class MessageController extends Controller
         )->where('is_active', true)->first();
 
         if (! $provider) {
-            return response()->json(['error' => "No hay provider activo para el canal {$data['channel']}."], 422);
+            return response()->json(['error' => "No hay provider activo para {$data['channel']}."], 422);
         }
 
         $isScheduled = ! empty($data['scheduled_at']) && now()->lt($data['scheduled_at']);
@@ -88,30 +97,37 @@ class MessageController extends Controller
         return response()->json($message, 201);
     }
 
+    /**
+     * Ver detalle + eventos de un mensaje.
+     */
     public function show(Request $request, string $uuid)
     {
-        $user    = $request->user();
-        $message = Message::with('events')
-            ->when(! $user->isAdmin(), fn ($q) => $q->forUser($user->id))
+        $message = Message::forUser($request->user()->id)
+            ->with('events')
             ->findOrFail($uuid);
 
         return response()->json($message);
     }
 
-    public function cancel(Request $request, string $uuid)
+    /**
+     * Logs de todos los mensajes del developer.
+     */
+    public function logs(Request $request)
     {
-        $user    = $request->user();
-        $message = Message::when(! $user->isAdmin(), fn ($q) => $q->forUser($user->id))
-            ->findOrFail($uuid);
+        $apiKey = $request->get('_api_key');
 
-        if (! $message->isCancellable()) {
-            return response()->json([
-                'error' => "No se puede cancelar un mensaje en estado '{$message->status}'.",
-            ], 422);
+        if ($apiKey && ! $apiKey->can('messages:read')) {
+            return response()->json(['error' => 'API Key sin permiso para leer logs.'], 403);
         }
 
-        $message->update(['status' => Message::STATUS_CANCELLED]);
-        return response()->json($message);
+        $messages = Message::forUser($request->user()->id)
+            ->with('events')
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            ->when($request->channel, fn ($q) => $q->where('channel', $request->channel))
+            ->latest()
+            ->paginate(100);
+
+        return response()->json($messages);
     }
 
     private function mask(string $recipient): string

@@ -17,7 +17,12 @@ export default function LoginPage() {
     setMounted(true);
     const token = localStorage.getItem("token");
     if (token) {
-      router.replace("/pages/dashboard");
+      const stored = localStorage.getItem("user");
+      const user = stored ? JSON.parse(stored) : null;
+      const role = user?.role;
+      if (role === "admin") router.replace("/pages/admin");
+      else if (role === "developer") router.replace("/pages/dev");
+      else router.replace("/pages/dashboard");
     }
   }, [router]);
 
@@ -30,7 +35,10 @@ export default function LoginPage() {
       const data = await loginRequest({ email, password });
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      router.push("/pages/dashboard");
+      const role = data.user.role;
+      if (role === "admin") router.push("/pages/admin");
+      else if (role === "developer") router.push("/pages/dev");
+      else router.push("/pages/dashboard");
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

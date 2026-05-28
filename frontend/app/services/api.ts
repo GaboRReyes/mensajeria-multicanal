@@ -196,3 +196,184 @@ export async function exportReport(format: "pdf" | "excel"): Promise<void> {
   link.remove();
   URL.revokeObjectURL(url);
 }
+
+/* ─────────────────────────────────────────────
+   Admin
+───────────────────────────────────────────── */
+
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'client' | 'developer';
+  is_active: boolean;
+  monthly_limit: number | null;
+  used_this_month: number;
+  messages_count?: number;
+  campaigns_count?: number;
+  contacts_count?: number;
+  created_at: string;
+}
+
+export interface AdminStats {
+  users: {
+    total: number;
+    active: number;
+    by_role: Record<string, number>;
+  };
+  messages: {
+    total: number;
+    by_status: Record<string, number>;
+    by_channel: Record<string, number>;
+  };
+  campaigns: {
+    total: number;
+    by_status: Record<string, number>;
+  };
+  updated_at: string;
+}
+
+export interface PaginatedUsers {
+  data: AdminUser[];
+  total: number;
+  per_page: number;
+  current_page: number;
+  last_page: number;
+}
+
+export async function getAdminStats(): Promise<AdminStats> {
+  const r = await fetch(`${API_BASE}/admin/stats`, { headers: authHeaders() });
+  const result = await r.json();
+  if (!r.ok) throw new Error(result.message ?? "Error al cargar estadísticas.");
+  return result;
+}
+
+export async function getAdminUsers(params?: { role?: string; search?: string; page?: number }): Promise<PaginatedUsers> {
+  const qs = new URLSearchParams();
+  if (params?.role) qs.set("role", params.role);
+  if (params?.search) qs.set("search", params.search);
+  if (params?.page) qs.set("page", String(params.page));
+  const r = await fetch(`${API_BASE}/admin/users?${qs}`, { headers: authHeaders() });
+  const result = await r.json();
+  if (!r.ok) throw new Error(result.message ?? "Error al cargar usuarios.");
+  return result;
+}
+
+export interface CreateUserPayload {
+  name: string;
+  email: string;
+  password: string;
+  role: 'admin' | 'client' | 'developer';
+  monthly_limit?: number | null;
+}
+
+export async function createAdminUser(data: CreateUserPayload): Promise<AdminUser> {
+  const r = await fetch(`${API_BASE}/admin/users`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  });
+  const result = await r.json();
+  if (!r.ok) throw new Error(result.message ?? "Error al crear usuario.");
+  return result;
+}
+
+export async function updateAdminUser(id: number, data: Partial<CreateUserPayload & { is_active: boolean }>): Promise<AdminUser> {
+  const r = await fetch(`${API_BASE}/admin/users/${id}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  });
+  const result = await r.json();
+  if (!r.ok) throw new Error(result.message ?? "Error al actualizar usuario.");
+  return result;
+}
+
+export async function deleteAdminUser(id: number): Promise<void> {
+  const r = await fetch(`${API_BASE}/admin/users/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!r.ok) {
+    const result = await r.json().catch(() => null);
+    throw new Error(result?.error ?? result?.message ?? "Error al eliminar usuario.");
+  }
+}
+
+export async function toggleAdminUser(id: number): Promise<{ is_active: boolean }> {
+  const r = await fetch(`${API_BASE}/admin/users/${id}/toggle`, {
+    method: "PATCH",
+    headers: authHeaders(),
+  });
+  const result = await r.json();
+  if (!r.ok) throw new Error(result.message ?? "Error al cambiar estado.");
+  return result;
+}
+
+/* ─────────────────────────────────────────────
+   Dev — API Keys
+───────────────────────────────────────────── */
+
+export interface ApiKey {
+  id: number;
+  name: string;
+  prefix: string;
+  abilities: string[];
+  is_active: boolean;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export async function getDevApiKeys(): Promise<ApiKey[]> {
+  const r = await fetch(`${API_BASE}/dev/api-keys`, { headers: authHeaders() });
+  const result = await r.json();
+  if (!r.ok) throw new Error(result.message ?? "Error al cargar API keys.");
+  return result;
+}
+
+export interface CreateApiKeyPayload {
+  name: string;
+  abilities?: string[];
+  env?: 'live' | 'test';
+  expires_at?: string | null;
+}
+
+export interface CreatedApiKey {
+  api_key: ApiKey;
+  token: string;
+  warning: string;
+}
+
+export async function createDevApiKey(data: CreateApiKeyPayload): Promise<CreatedApiKey> {
+  const r = await fetch(`${API_BASE}/dev/api-keys`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  });
+  const result = await r.json();
+  if (!r.ok) throw new Error(result.error ?? result.message ?? "Error al crear API key.");
+  return result;
+}
+
+export async function deleteDevApiKey(id: number): Promise<void> {
+  const r = await fetch(`${API_BASE}/dev/api-keys/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!r.ok) {
+    const result = await r.json().catch(() => null);
+    throw new Error(result?.message ?? "Error al eliminar API key.");
+  }
+}
+
+export async function revokeDevApiKey(id: number): Promise<void> {
+  const r = await fetch(`${API_BASE}/dev/api-keys/${id}/revoke`, {
+    method: "PATCH",
+    headers: authHeaders(),
+  });
+  if (!r.ok) {
+    const result = await r.json().catch(() => null);
+    throw new Error(result?.message ?? "Error al revocar API key.");
+  }
+}

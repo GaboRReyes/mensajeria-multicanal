@@ -1,0 +1,480 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-right: 1px solid var(--border);
+  transition: transform 0.25s ease;
+}
+
+.sidebarHeader {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebarTitle {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.roleBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #7c3aed;
+  color: white;
+}
+
+.sidebarNav {
+  flex: 1;
+  padding: 0.75rem;
+  overflow-y: auto;
+}
+
+.sidebarMenu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebarItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 400;
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+}
+
+.sidebarItem:hover {
+  background: #f4f4f5;
+  color: var(--text);
+}
+
+.sidebarItem.active {
+  background: #7c3aed;
+  color: white;
+}
+
+.sidebarFooter {
+  padding: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.logoutButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.logoutButton:hover {
+  background: #f4f4f5;
+  color: var(--text);
+}
+
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+}
+
+.overlay.visible {
+  display: block;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.75rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.menuButton {
+  display: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.25rem;
+  cursor: pointer;
+}
+
+.userPill {
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: white;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.content {
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.sectionLabel {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text);
+  margin: 0.5rem 0 0;
+}
+
+.cardDescription {
+  margin-top: 0.6rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.sectionHeaderRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: none;
+  border-radius: 10px;
+  padding: 0.75rem 1.25rem;
+  background: #7c3aed;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.primaryButton:hover {
+  background: #6d28d9;
+}
+
+.primaryButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.85rem;
+  background: white;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.secondaryButton:hover {
+  background: #f4f4f5;
+}
+
+.dangerButton {
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 0.85rem;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dangerButton:hover {
+  background: #fecaca;
+}
+
+/* TABLE */
+.tableWrapper {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  background: #4c1d95;
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.table th:first-child { border-radius: 8px 0 0 0; }
+.table th:last-child  { border-radius: 0 8px 0 0; }
+
+.table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: #faf5ff; }
+
+.actionsGroup {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.activeBadge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.activeBadgeOn  { background: #ede9fe; color: #6d28d9; }
+.activeBadgeOff { background: #fee2e2; color: #991b1b; }
+
+/* KEY TOKEN (mostrar solo una vez) */
+.tokenAlert {
+  background: #fefce8;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.tokenAlert p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #92400e;
+  font-weight: 500;
+}
+
+.tokenCode {
+  font-family: "SF Mono", "Fira Code", monospace;
+  background: #18181b;
+  color: #a3e635;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  word-break: break-all;
+  user-select: all;
+}
+
+/* MODAL */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.inputGroup label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.input,
+.select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  background: #fafafa;
+  color: var(--text);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus,
+.select:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.08);
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.errorText {
+  color: #b91c1c;
+  font-size: 0.88rem;
+}
+
+.loading {
+  display: grid;
+  place-items: center;
+  min-height: 50vh;
+  color: var(--muted);
+}
+
+/* DOCS section */
+.codeBlock {
+  background: #18181b;
+  color: #d4d4d8;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 0.83rem;
+  line-height: 1.65;
+  overflow-x: auto;
+  white-space: pre;
+  margin-top: 0.75rem;
+}
+
+.docSection {
+  margin-top: 1.25rem;
+}
+
+.docSection h4 {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.docSection p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .menuButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .content {
+    padding: 1rem;
+  }
+
+  .header {
+    padding: 0 1rem;
+  }
+}

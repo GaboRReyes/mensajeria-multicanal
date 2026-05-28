@@ -10,7 +10,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Carbon;
 use Throwable;
 
 class SendWhatsAppMessageJob implements ShouldQueue
@@ -21,7 +20,7 @@ class SendWhatsAppMessageJob implements ShouldQueue
 
     public function __construct(public string $messageId) {}
 
-    // Backoff exponencial: 1min, 5min, 30min (spec 4.3)
+    // Backoff exponencial: 1min → 5min → 30min
     public function backoff(): array
     {
         return [60, 300, 1800];
@@ -31,52 +30,54 @@ class SendWhatsAppMessageJob implements ShouldQueue
     {
         $message = Message::with('template')->findOrFail($this->messageId);
 
-        // Si fue cancelado mientras esperaba, no enviar
-        if ($message->status === 'cancelado') {
+        if ($message->status === Message::STATUS_CANCELLED) {
             return;
         }
 
+        $message->update(['status' => Message::STATUS_PROCESSING]);
         $message->increment('attempts');
 
-        $template = $message->template;
-        $templateName = $template?->whatsapp_template_name ?? 'hello_world';
-        $lang = $template?->language ?? 'en_US';
+        $template     = $message->template;
+        $to           = $message->variables['to'] ?? null;
+        $freeText     = $message->variables['text'] ?? null;
+        $bodyVars     = $message->variables['body'] ?? [];
 
-        // El número real va en variables['to'] (no se guarda en claro por privacidad)
-        $to = $message->variables['to'] ?? null;
         if (! $to) {
             $this->markFailed($message, 'No recipient (variables.to) provided');
             return;
         }
 
-        $freeText = $message->variables['text'] ?? null;
-
         if (! $template && $freeText) {
             $response = $whatsapp->sendText($to, $freeText);
         } else {
             $templateName = $template?->whatsapp_template_name ?? 'hello_world';
-            $lang = $template?->language ?? 'en_US';
+            $lang         = $template?->language ?? 'en_US';
             $expectedVars = $template?->variables ?? [];
-            $bodyVars = ! empty($expectedVars) ? ($message->variables['body'] ?? []) : [];
-            $response = $whatsapp->sendTemplate($to, $templateName, $lang, $bodyVars);
+            $vars         = ! empty($expectedVars) ? $bodyVars : [];
+            $response     = $whatsapp->sendTemplate($to, $templateName, $lang, $vars);
         }
+
         $wamid = $response['messages'][0]['id'] ?? null;
 
         $message->update([
-            'status' => 'enviado',
+            'status'              => Message::STATUS_SENT,
             'provider_message_id' => $wamid,
-            'sent_at' => now(),
+            'sent_at'             => now(),
         ]);
 
         MessageEvent::create([
-            'message_id' => $message->id,
-            'status' => 'enviado',
-            'payload' => $response,
+            'message_id'  => $message->id,
+            'status'      => Message::STATUS_SENT,
+            'payload'     => $response,
             'occurred_at' => now(),
         ]);
+
+        // Actualizar estadísticas de campaña si aplica
+        if ($message->campaign_id) {
+            UpdateCampaignStatsJob::dispatch($message->campaign_id)->onQueue('low');
+        }
     }
 
-    // Se llama cuando se agotan los reintentos
     public function failed(Throwable $e): void
     {
         $message = Message::find($this->messageId);
@@ -88,15 +89,19 @@ class SendWhatsAppMessageJob implements ShouldQueue
     private function markFailed(Message $message, string $error): void
     {
         $message->update([
-            'status' => 'fallido',
+            'status'     => Message::STATUS_FAILED,
             'last_error' => ['message' => $error, 'at' => now()->toIso8601String()],
         ]);
 
         MessageEvent::create([
-            'message_id' => $message->id,
-            'status' => 'fallido',
-            'error' => $error,
+            'message_id'  => $message->id,
+            'status'      => Message::STATUS_FAILED,
+            'error'       => $error,
             'occurred_at' => now(),
         ]);
+
+        if ($message->campaign_id) {
+            UpdateCampaignStatsJob::dispatch($message->campaign_id)->onQueue('low');
+        }
     }
 }
